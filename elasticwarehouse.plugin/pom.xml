@@ -1,0 +1,261 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+!! This file has been generated from pom.template file. Any manual changes can be lost
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <name>elasticwarehouseplugin</name>
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>plugin.elasticwarehouse</groupId>
+    <artifactId>elasticwarehouseplugin</artifactId>
+    <version>${elasticwarehouse.version}-${elastic.version}</version>
+    <packaging>jar</packaging>
+
+	<licenses>
+        <license>
+            <name>The Apache Software License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+	
+    <properties>
+		<elasticwarehouse.version>1.2.0</elasticwarehouse.version>
+		
+		<timestamp>${maven.build.timestamp}</timestamp>
+		<maven.build.timestamp.format>yyyy-MM-dd'T'HH:mm:ssZ</maven.build.timestamp.format>
+		
+		<elastic.version>1.7.1</elastic.version>
+		<lucene.version>4.10.4</lucene.version>
+
+        <jdk.version>1.7</jdk.version>
+		<jodatime.version>2.5</jodatime.version>
+		<junit.version>4.11</junit.version>
+		<log4j.version>1.2.17</log4j.version> 
+    </properties>
+
+    <repositories>
+        
+		<repository>
+            <id>mvnrepository.com/</id>
+            <name>mvnrepository.com</name>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <url>http://repo1.maven.org/maven2</url>
+        </repository>
+		
+		<repository>
+      <id>local-elasticwarehouse-repo</id>
+      <name>local elasticwarehouse repo</name>
+      <url>file://${project.basedir}/../</url>
+    </repository>
+    </repositories>
+  
+    <dependencies>
+        <dependency>
+            <groupId>org.elasticsearch</groupId>
+            <artifactId>elasticsearch</artifactId>
+            <version>${elastic.version}</version>
+            <scope>compile</scope>
+        </dependency>
+		<dependency>
+      <groupId>org.apache.lucene</groupId>
+      <artifactId>lucene-core</artifactId>
+      <version>${lucene.version}</version>
+    </dependency>
+      <dependency>
+	<groupId>commons-io</groupId>
+	<artifactId>commons-io</artifactId>
+	<version>2.4</version>
+</dependency>
+    	<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>${junit.version}</version>
+			<scope>test</scope>
+		</dependency>
+		
+		<dependency>
+		    <groupId>elasticwarehouse</groupId>
+		    <artifactId>elasticwarehouse</artifactId>
+		    <version>${elasticwarehouse.version}-${elastic.version}</version>
+		    <scope>system</scope>
+    		    <!--<systemPath>${basedir}/../elasticwarehouse.core/target/elasticwarehouse.core-${elasticwarehouse.version}-${elastic.version}.jar</systemPath> -->
+		    <systemPath>${basedir}/../elasticwarehouse.core/target_copy/elasticwarehouse.core-${elasticwarehouse.version}-${elastic.version}.jar</systemPath>
+  		</dependency>
+  
+		<dependency>
+			<groupId>joda-time</groupId>
+			<artifactId>joda-time</artifactId>
+			<version>${jodatime.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>log4j</groupId>
+			<artifactId>log4j</artifactId>
+			<version>${log4j.version}</version>
+		</dependency>
+		
+<dependency>
+	<groupId>org.codehaus.groovy</groupId>
+	<artifactId>groovy-all</artifactId>
+	<version>2.0.5</version>
+</dependency>
+
+		<dependency>
+			<groupId>org.elasticsearch</groupId>
+			<artifactId>elasticsearch</artifactId>
+			<version>${elastic.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.lucene</groupId>
+			<artifactId>lucene-expressions</artifactId>
+			<scope>provided</scope>
+			<version>${lucene.version}</version>
+		</dependency>
+		<dependency>
+		 	<groupId>org.apache.commons</groupId>
+  			<artifactId>commons-lang3</artifactId>
+  			<version>3.3.2</version>
+  		</dependency>
+		<dependency>
+			<groupId>org.codehaus.groovy</groupId>
+			<artifactId>groovy-all</artifactId>
+			<version>2.3.2</version>
+		</dependency>	
+		<dependency>
+			<groupId>org.apache.tika</groupId>
+			<artifactId>tika-core</artifactId>
+			<version>1.7</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.tika</groupId>
+			<artifactId>tika-parsers</artifactId>
+			<version>1.7</version>
+		</dependency>
+	 <!-- 	<dependency>
+			<groupId>org.eclipse.jetty</groupId>
+			<artifactId>jetty-rewrite</artifactId>
+			<version>9.2.7.v20150116</version>
+		</dependency>
+		<dependency>
+			<groupId>org.eclipse.jetty</groupId>
+			<artifactId>jetty-io</artifactId>
+			<version>9.2.7.v20150116</version>
+		</dependency>
+		<dependency>
+	<groupId>org.eclipse.jetty.aggregate</groupId>
+	<artifactId>jetty-all</artifactId>
+	<version>9.2.3.v20140905</version>
+</dependency>
+		<dependency>
+	<groupId>org.eclipse.jetty.websocket</groupId>
+	<artifactId>websocket-common</artifactId>
+	<version>9.2.1.v20140609</version>
+</dependency>
+<dependency>
+	<groupId>org.eclipse.jetty.websocket</groupId>
+	<artifactId>websocket-client</artifactId>
+	<version>9.2.1.v20140609</version>
+</dependency> -->
+
+		<dependency>
+			<groupId>com.sun.net.httpserver</groupId>
+			<artifactId>http</artifactId>
+			<version>20070405</version>
+		</dependency>
+	<dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-log4j12</artifactId>
+        <version>1.7.10</version>
+    </dependency>
+    <dependency>
+		<groupId>org.json</groupId>
+		<artifactId>json</artifactId>
+		<version>20090211</version>
+	</dependency>
+	<dependency>
+	<groupId>org.rrd4j</groupId>
+	<artifactId>rrd4j</artifactId>
+	<version>2.2</version>
+</dependency>
+    
+		<!-- <dependency>
+			<groupId>org.eclipse.jetty</groupId>
+			<artifactId>jetty</artifactId>
+			<version>6.1.26</version>
+		</dependency> -->
+		
+		<!--  <dependency>
+      		<groupId>org.eclipse.jetty</groupId>
+      		<artifactId>jetty-server</artifactId>
+      		<version>6.1.26</version>
+    	</dependency> -->
+		<dependency>
+	<groupId>org.eclipse.jetty</groupId>
+	<artifactId>jetty-server</artifactId>
+	<version>9.2.7.v20150116</version>
+</dependency>
+    </dependencies>
+
+    <build>
+		<resources>
+			<resource>
+				<directory>src/main/resources</directory>
+				<filtering>true</filtering>
+			</resource>
+		</resources>
+	
+        <!-- Create a zip file according to elasticsearch naming scheme -->
+        <plugins>
+		
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>1.7</version>
+                <executions>
+                    <execution>
+                        <id>zip</id>
+                        <phase>package</phase>
+                        <configuration>
+                            <target>
+				<!--<copy file="${basedir}/../elasticwarehouse.core/target/elasticwarehouse.core-${elasticwarehouse.version}-${elastic.version}-jar-with-dependencies.jar" todir="${project.build.directory}" />-->
+				<copy file="${basedir}/../elasticwarehouse.core/target_copy/elasticwarehouse.core-${elasticwarehouse.version}-${elastic.version}-jar-with-dependencies.jar" todir="${project.build.directory}" />
+				<copy file="${basedir}/../elasticwarehouse.core/config/elasticwarehouse.yml" todir="${project.build.directory}/config" />
+                                <zip basedir="${project.build.directory}"
+                                     includes="${project.build.finalName}.jar config/elasticwarehouse.yml elasticwarehouse.core-${elasticwarehouse.version}-${elastic.version}-jar-with-dependencies.jar"
+                                     destfile="${project.build.directory}/elasticsearch-${project.name}-${elasticwarehouse.version}-${elastic.version}-with-dependencies.zip" />
+				<delete file="${project.build.directory}/elasticwarehouse.core-${elasticwarehouse.version}-${elastic.version}-jar-with-dependencies.jar"/>
+				<!--<copy file="${basedir}/../elasticwarehouse.core/target/elasticwarehouse.core-${elasticwarehouse.version}-${elastic.version}.jar" todir="${project.build.directory}" />-->
+				<copy file="${basedir}/../elasticwarehouse.core/target_copy/elasticwarehouse.core-${elasticwarehouse.version}-${elastic.version}.jar" todir="${project.build.directory}" />
+				<zip basedir="${project.build.directory}"
+                                     includes="${project.build.finalName}.jar config/elasticwarehouse.yml elasticwarehouse.core-${elasticwarehouse.version}-${elastic.version}.jar"
+                                     destfile="${project.build.directory}/elasticsearch-${project.name}-${elasticwarehouse.version}-${elastic.version}.zip" />
+                            </target>
+                        </configuration>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <configuration>
+                        <source>1.7</source>
+                        <target>1.7</target>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
+</project>

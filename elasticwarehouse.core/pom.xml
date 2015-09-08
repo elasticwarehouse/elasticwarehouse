@@ -1,0 +1,269 @@
+<!-- 
+!! This file has been generated from pom.template file. Any manual changes can be lost
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>org.elasticwarehouse.core</groupId>
+  <artifactId>elasticwarehouse.core</artifactId>
+  <packaging>jar</packaging>
+  <version>${elasticwarehouse.version}-${elastic.version}</version>
+  <name>elasticwarehouse.core</name>
+  <url>http://maven.apache.org</url>
+  
+  <licenses>
+        <license>
+            <name>The Apache Software License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+	
+  <properties>
+		<elasticwarehouse.version>1.2.0</elasticwarehouse.version>
+		
+		<timestamp>${maven.build.timestamp}</timestamp>
+		<maven.build.timestamp.format>yyyy-MM-dd'T'HH:mm:ssZ</maven.build.timestamp.format>
+		
+		<jdk.version>1.7</jdk.version>
+		<jodatime.version>2.5</jodatime.version>
+		<junit.version>4.11</junit.version>
+		<log4j.version>1.2.17</log4j.version>
+
+		<elastic.version>1.7.1</elastic.version>
+		<lucene.version>4.10.4</lucene.version>
+		
+		<grafana.version>1.9.0</grafana.version>
+  </properties>
+<build>
+    <resources>
+		<resource>
+			<directory>resources</directory>
+            <excludes>
+                <exclude>logback.xml</exclude>
+            </excludes>
+		</resource>
+        <resource>
+           <directory>src/main/resources</directory>
+			<filtering>true</filtering>
+        </resource>
+    </resources>
+    <plugins>
+        <plugin>
+                <!-- Jetty < 9 is in org.mortbay.jetty groupId -->
+                <groupId>org.mortbay.jetty</groupId>
+                <!--  <version>8.1.9.v20130131</version> -->
+                <version>9.2.7.v20150116</version>
+                <!-- Starting from Jetty 9 groupId is org.eclipse.jetty already -->
+                <!-- <groupId>org.eclipse.jetty</groupId> -->
+                <!-- Change to latest version available from http://search.maven.org/#search%7Cgav%7C1%7Cg%3A%22org.eclipse.jetty%22%20AND%20a%3A%22jetty-maven-plugin%22 -->
+                <!-- <version>9.x.y.z</version> -->
+                <artifactId>jetty-maven-plugin</artifactId>
+                <configuration>
+    				<jettyXml>${basedir}/src/main/etc/jetty.xml</jettyXml>
+  				</configuration>
+        </plugin>
+		<plugin>
+			<artifactId>maven-assembly-plugin</artifactId>
+			<executions>
+			  <execution>
+				<phase>package</phase>
+				<goals>
+				  <goal>single</goal>
+				</goals>
+			  </execution>
+			</executions>
+			<configuration>
+				<descriptorRefs>
+					<descriptorRef>jar-with-dependencies</descriptorRef>
+				</descriptorRefs>
+				<excludes>
+					<exclude>**/elasticwarehouse.yml</exclude>
+					<exclude>**/elasticsearch.yml</exclude>
+					<exclude>**/log4j.properties</exclude>
+				</excludes>
+				<fileSets> 
+					<fileSet>
+						<directory>${basedir}</directory>
+						<excludes>
+							<exclude>**/elasticwarehouse.yml</exclude>
+								<exclude>**/elasticsearch.yml</exclude>
+								<exclude>**/log4j.properties</exclude>
+						</excludes>
+					</fileSet> 
+				</fileSets>
+			</configuration>
+		</plugin>
+		<plugin>
+             <artifactId>maven-antrun-plugin</artifactId>
+             <executions>
+                 <execution>
+                     <id>packaging</id>
+                     <phase>package</phase>
+                     <goals>
+                         <goal>run</goal>
+                     </goals>
+                     <configuration>
+                         <tasks>
+
+                             <!-- Deleting kenai dir content -->
+                             <!--  <delete dir="${project.build.directory}/kenai" />-->
+
+                             <!-- Making dir -->
+                             <!--  <mkdir dir="${project.build.directory}/kenai" /> -->
+
+                             <!-- Copying site (including online Javadoc)
+                               <copy todir="${project.build.directory}/kenai/site">
+                                   <fileset dir="${project.build.directory}/site" />
+                               </copy>   -->
+
+                             <!-- Tar-gz & zip dependencies -->
+                             <!-- <tar destfile="${project.build.directory}/kenai/lib-dependencies-${project.version}.tar" basedir="${basedir}/lib" /> -->
+                             <!-- <gzip destfile="${project.build.directory}/kenai/lib-dependencies-${project.version}.tar.gz" src="${project.build.directory}/kenai/lib-dependencies-${project.version}.tar" /> -->
+                             <!-- <delete file="${project.build.directory}/kenai/lib-dependencies-${project.version}.tar" /> -->
+                             <!-- <zip destfile="${project.build.directory}/kenai/lib-dependencies-${project.version}.zip" basedir="${basedir}/lib" /> -->
+
+
+                             <!-- Moving the src code packaging -->
+                             <!--  <copy file="${project.build.directory}/${project.artifactId}-${project.version}-project.tar.gz" todir="${project.build.directory}/kenai" /> -->
+                             <!--  <copy file="${project.build.directory}/${project.artifactId}-${project.version}-project.zip" todir="${project.build.directory}/kenai" /> -->
+
+                             <!-- Moving the .jar -->
+                             <!--  <copy file="${project.build.directory}/${project.artifactId}-${project.version}.jar" todir="${project.build.directory}/kenai" /> -->
+
+                             <!-- Copying the pom.xml -->
+<!-- 
+                             <copy file="${basedir}/elasticsearch.yml" todir="${project.build.directory}/classes" />
+                             <copy file="${basedir}/elasticwarehouse.yml" todir="${project.build.directory}/classes" />
+                             <copy file="${basedir}/log4j.properties" todir="${project.build.directory}/classes" />
+-->                             
+
+                         </tasks>
+                     </configuration>
+                 </execution>
+             </executions>
+         </plugin>
+        
+    </plugins>
+</build>
+
+  <dependencies>
+  <dependency>
+	<groupId>commons-io</groupId>
+	<artifactId>commons-io</artifactId>
+	<version>2.4</version>
+</dependency>
+    	<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>${junit.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>joda-time</groupId>
+			<artifactId>joda-time</artifactId>
+			<version>${jodatime.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>log4j</groupId>
+			<artifactId>log4j</artifactId>
+			<version>${log4j.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.elasticsearch</groupId>
+			<artifactId>elasticsearch</artifactId>
+			<version>${elastic.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.lucene</groupId>
+			<artifactId>lucene-expressions</artifactId>
+			<scope>provided</scope>
+			<version>${lucene.version}</version>
+		</dependency>
+		<dependency>
+		 	<groupId>org.apache.commons</groupId>
+  			<artifactId>commons-lang3</artifactId>
+  			<version>3.3.2</version>
+  		</dependency>
+		<dependency>
+			<groupId>org.codehaus.groovy</groupId>
+			<artifactId>groovy-all</artifactId>
+			<version>2.3.2</version>
+		</dependency>	
+		<dependency>
+			<groupId>org.apache.tika</groupId>
+			<artifactId>tika-core</artifactId>
+			<version>1.7</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.tika</groupId>
+			<artifactId>tika-parsers</artifactId>
+			<version>1.7</version>
+		</dependency>
+	 <!-- 	<dependency>
+			<groupId>org.eclipse.jetty</groupId>
+			<artifactId>jetty-rewrite</artifactId>
+			<version>9.2.7.v20150116</version>
+		</dependency>
+		<dependency>
+			<groupId>org.eclipse.jetty</groupId>
+			<artifactId>jetty-io</artifactId>
+			<version>9.2.7.v20150116</version>
+		</dependency>
+		<dependency>
+	<groupId>org.eclipse.jetty.aggregate</groupId>
+	<artifactId>jetty-all</artifactId>
+	<version>9.2.3.v20140905</version>
+</dependency>
+		<dependency>
+	<groupId>org.eclipse.jetty.websocket</groupId>
+	<artifactId>websocket-common</artifactId>
+	<version>9.2.1.v20140609</version>
+</dependency>
+<dependency>
+	<groupId>org.eclipse.jetty.websocket</groupId>
+	<artifactId>websocket-client</artifactId>
+	<version>9.2.1.v20140609</version>
+</dependency> -->
+
+		<dependency>
+			<groupId>com.sun.net.httpserver</groupId>
+			<artifactId>http</artifactId>
+			<version>20070405</version>
+		</dependency>
+	<dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-log4j12</artifactId>
+        <version>1.7.10</version>
+    </dependency>
+    <dependency>
+		<groupId>org.json</groupId>
+		<artifactId>json</artifactId>
+		<version>20090211</version>
+	</dependency>
+	<dependency>
+	<groupId>org.rrd4j</groupId>
+	<artifactId>rrd4j</artifactId>
+	<version>2.2</version>
+</dependency>
+    
+		<!-- <dependency>
+			<groupId>org.eclipse.jetty</groupId>
+			<artifactId>jetty</artifactId>
+			<version>6.1.26</version>
+		</dependency> -->
+		
+		<!--  <dependency>
+      		<groupId>org.eclipse.jetty</groupId>
+      		<artifactId>jetty-server</artifactId>
+      		<version>6.1.26</version>
+    	</dependency> -->
+		<dependency>
+	<groupId>org.eclipse.jetty</groupId>
+	<artifactId>jetty-server</artifactId>
+	<version>9.2.7.v20150116</version>
+</dependency>
+		
+		
+  </dependencies>
+</project> 

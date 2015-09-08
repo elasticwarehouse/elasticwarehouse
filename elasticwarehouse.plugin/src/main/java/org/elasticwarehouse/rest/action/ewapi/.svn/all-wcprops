@@ -1,0 +1,77 @@
+K 25
+svn:wc:ra_dav:version-url
+V 113
+/EffiSoft/!svn/ver/509/Software/Java/elasticwarehouse.plugin/src/main/java/org/elasticwarehouse/rest/action/ewapi
+END
+ElasticWarehouseInfo.java
+K 25
+svn:wc:ra_dav:version-url
+V 139
+/EffiSoft/!svn/ver/507/Software/Java/elasticwarehouse.plugin/src/main/java/org/elasticwarehouse/rest/action/ewapi/ElasticWarehouseInfo.java
+END
+ElasticWarehouseRestHandler.java
+K 25
+svn:wc:ra_dav:version-url
+V 146
+/EffiSoft/!svn/ver/507/Software/Java/elasticwarehouse.plugin/src/main/java/org/elasticwarehouse/rest/action/ewapi/ElasticWarehouseRestHandler.java
+END
+ElasticWarehouseSummary.java
+K 25
+svn:wc:ra_dav:version-url
+V 142
+/EffiSoft/!svn/ver/507/Software/Java/elasticwarehouse.plugin/src/main/java/org/elasticwarehouse/rest/action/ewapi/ElasticWarehouseSummary.java
+END
+ElasticWarehouseSearchAll.java
+K 25
+svn:wc:ra_dav:version-url
+V 144
+/EffiSoft/!svn/ver/507/Software/Java/elasticwarehouse.plugin/src/main/java/org/elasticwarehouse/rest/action/ewapi/ElasticWarehouseSearchAll.java
+END
+ElasticWarehouseGet.java
+K 25
+svn:wc:ra_dav:version-url
+V 138
+/EffiSoft/!svn/ver/507/Software/Java/elasticwarehouse.plugin/src/main/java/org/elasticwarehouse/rest/action/ewapi/ElasticWarehouseGet.java
+END
+ElasticWarehouseBrowse.java
+K 25
+svn:wc:ra_dav:version-url
+V 141
+/EffiSoft/!svn/ver/507/Software/Java/elasticwarehouse.plugin/src/main/java/org/elasticwarehouse/rest/action/ewapi/ElasticWarehouseBrowse.java
+END
+ElasticWarehouseTask.java
+K 25
+svn:wc:ra_dav:version-url
+V 139
+/EffiSoft/!svn/ver/507/Software/Java/elasticwarehouse.plugin/src/main/java/org/elasticwarehouse/rest/action/ewapi/ElasticWarehouseTask.java
+END
+BaseRestHandlerESVer.java
+K 25
+svn:wc:ra_dav:version-url
+V 139
+/EffiSoft/!svn/ver/509/Software/Java/elasticwarehouse.plugin/src/main/java/org/elasticwarehouse/rest/action/ewapi/BaseRestHandlerESVer.java
+END
+ElasticWarehouseUpload.java
+K 25
+svn:wc:ra_dav:version-url
+V 141
+/EffiSoft/!svn/ver/507/Software/Java/elasticwarehouse.plugin/src/main/java/org/elasticwarehouse/rest/action/ewapi/ElasticWarehouseUpload.java
+END
+ElasticWarehouseSearch.java
+K 25
+svn:wc:ra_dav:version-url
+V 141
+/EffiSoft/!svn/ver/507/Software/Java/elasticwarehouse.plugin/src/main/java/org/elasticwarehouse/rest/action/ewapi/ElasticWarehouseSearch.java
+END
+BaseRestHandlerESVer130.java.tpl
+K 25
+svn:wc:ra_dav:version-url
+V 146
+/EffiSoft/!svn/ver/507/Software/Java/elasticwarehouse.plugin/src/main/java/org/elasticwarehouse/rest/action/ewapi/BaseRestHandlerESVer130.java.tpl
+END
+BaseRestHandlerESVer140.java.tpl
+K 25
+svn:wc:ra_dav:version-url
+V 146
+/EffiSoft/!svn/ver/507/Software/Java/elasticwarehouse.plugin/src/main/java/org/elasticwarehouse/rest/action/ewapi/BaseRestHandlerESVer140.java.tpl
+END

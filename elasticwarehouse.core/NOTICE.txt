@@ -1,0 +1,10 @@
+﻿ElasticWarehouse
+Copyright 2015 ElasticWarehouse
+
+This product includes software developed by:
+- The Apache Software Foundation (http://www.apache.org/)
+- Elastic.co (http://www.elastic.co/)
+- Iain Patterson's NSSM - the Non-Sucking Service Manager (http://www.nssm.cc/)
+- Torkel Ödegaard & Coding Instinct AB (http://grafana.org/)
+- elasticsearch kopf plugin (https://github.com/lmenezes/elasticsearch-kopf)
+- elasticsearch head plugin (https://github.com/mobz/elasticsearch-head)

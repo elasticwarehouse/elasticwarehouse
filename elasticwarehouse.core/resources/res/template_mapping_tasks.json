@@ -1,0 +1,35 @@
+{
+	"settings" : {
+		"number_of_shards" : 5,
+		"number_of_replicas" : 1
+	},
+	"mappings": {
+		"_default_": {
+			"_all": {
+				"enabled": false
+			},
+			"_ttl" : { 
+				"enabled" : true, "default" : "7d" 
+			},
+			"dynamic": false,
+			"properties": {
+				 "action" : 	{ "type" : "string", "index": "not_analyzed" },
+				 "cancelled" : 	{ "type" : "boolean" },
+				 "errorcode" : 	{ "type" : "integer" },
+				 "finished" : 	{ "type" : "boolean" },
+				 "host" : 	{ "type" : "string", "index": "not_analyzed" },
+				 "node" : 	{ "type" : "string", "index": "not_analyzed" },
+				 "path" : 	{ "type" : "string", "index": "not_analyzed" },
+				 "comment" : 	{ "type" : "string" },
+				 "progress" : 	{ "type" : "integer" },
+				 "submitdate" : { "type" : "date", "format" : "YYYY-MM-dd HH:mm:ss" },
+				 "taskid" : 	{ "type" : "string", "index": "not_analyzed" },
+				 "targetfolder":{ "type" : "string", "index": "not_analyzed" },
+				 "fileid":	{ "type" : "string", "index": "not_analyzed" }
+			}
+    		}
+    	},
+	"order": "1",
+	"template": "<templatename>*"
+}
+

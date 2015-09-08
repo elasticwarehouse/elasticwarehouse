@@ -1,0 +1,149 @@
+{
+	"settings" : {
+		"number_of_shards" : 5,
+		"number_of_replicas" : 1,
+		"analysis": {
+			"filter" : {
+			"dot_filter" : {
+		               "type" : "word_delimiter",
+               			"type_table": [". => DIGIT"]
+		           }
+			},
+
+		      "analyzer": {
+			"category_path": {
+			  "type": "custom",
+			  "tokenizer": "category_path"
+			},
+			"lowercase_analyzer":{
+				"type" : "custom",
+		          "tokenizer":"whitespace",
+                 	  "filter":["lowercase", "dot_filter" ]
+		        }
+		      },
+		      "tokenizer": {
+			"category_path": {
+			  "type": "path_hierarchy",
+			  "delimiter": "/"
+			}
+		      }
+		    }
+	},
+	"mappings": {
+		"_default_": {
+			"_all": {
+				"enabled": false
+			},
+			"_source": {
+				"excludes": ["undeffiletext"]
+			},
+			"dynamic": false,
+			"properties": {
+				"folder" : { "type" : "string" }, // "analyzer": "category_path" },
+				"folderna" : { "type" : "string", "index": "not_analyzed" },
+				"folderlevel" : { "type" : "integer" },
+				"isfolder" : { "type" : "boolean" },
+				"parentId" : { "type" : "string", "index": "not_analyzed" },
+				"stats" : {
+					"properties": {
+						"parseTime" : { "type" : "integer", "index": "not_analyzed" }
+					}
+				},
+				"origin" : {
+					"properties": {
+						"path" : { "type" : "string", "index": "not_analyzed" },
+						"filename" : { "type" : "string", "index": "not_analyzed" },
+						"source" : { "type" : "string", "index": "not_analyzed" },
+						"host" : { "type" : "string", "index": "not_analyzed" },
+						"node" : { "type" : "string", "index": "not_analyzed" }
+					}
+				},
+				"filename" : { "type" : "string", "analyzer":"lowercase_analyzer", "term_vector":"with_positions_offsets", "index":"analyzed", "index_options":"offsets" },
+				"filenamena" : { "type" : "string", "index": "not_analyzed" },
+				"filesize" : { "type" : "integer" },
+
+				"filetype" : { "type" : "string", "index": "not_analyzed" },
+				// "filethumb" : {
+				//	"properties":{
+				//		"thumb"  : { "type" : "binary" },
+				//		"sameasimage" : { "type" : "boolean" },
+				//		"available" : { "type" : "boolean" },
+				//		"thumbdate" : { "type" : "date", "format" : "YYYY-MM-dd HH:mm:ss" }		//thumb creation date
+				//	}
+				// },
+				"filethumb_thumb"  : { "type" : "binary" },
+				"filethumb_sameasimage" : { "type" : "boolean" },
+				"filethumb_available" : { "type" : "boolean" },
+				"filethumb_thumbdate" : { "type" : "date", "format" : "YYYY-MM-dd HH:mm:ss" },		//thumb creation date
+				"filecontent" : { "type" : "binary" },
+				"filetitle" : { "type" : "string", "analyzer":"lowercase_analyzer", "term_vector":"with_positions_offsets", "index":"analyzed", "index_options":"offsets" },
+				"filetext" : { "type" : "string", "analyzer":"lowercase_analyzer", "term_vector":"with_positions_offsets", "index":"analyzed", "index_options":"offsets" },
+				"imagewidth" : { "type" : "integer" },
+				"imageheight" : { "type" : "integer" },
+				"imagexresolution" : { "type" : "integer" },
+				"imageyresolution" : { "type" : "integer" },
+				"filemeta" : { 
+					"type": "nested",
+					"include_in_parent": true,
+					"properties": {
+						"metakey": {
+							"type": "string",
+							"index": "not_analyzed"
+						},
+						"metavaluedate": {
+							"type": "date",
+							"format" : "YYYY-MM-dd HH:mm:ss",
+							"index": "not_analyzed"
+						},
+						"metavaluetext": {
+							"type": "string", 
+							"analyzer":"lowercase_analyzer", 
+							"term_vector":"with_positions_offsets", 
+							"index":"analyzed", 
+							"index_options":"offsets"
+						},
+						"metavaluelong": {
+							"type": "long",
+							"index": "not_analyzed"
+						}
+					}
+				},
+				"filecreationdate" : { "type" : "date", "format" : "YYYY-MM-dd HH:mm:ss" },		//file creation date read from file attributes
+				"filemodificationdate" : { "type" : "date", "format" : "YYYY-MM-dd HH:mm:ss" },		//file modification date read from file attributes
+				"fileuploaddate" : { "type" : "date", "format" : "YYYY-MM-dd HH:mm:ss" },		//first upload timestamp
+				"filemodifydate": { "type" : "date", "format" : "YYYY-MM-dd HH:mm:ss" },		//last upload timestamp
+				"fileaccess" : {
+					"type":"nested",
+					"include_in_parent": true,
+					"properties":{
+						"adate": {
+						      	"type": "date",
+						      	"format" : "YYYY-MM-dd HH:mm:ss"
+						},
+						"auser": {
+							"type": "string"
+						}
+					}
+				},
+				"filemodification" : {
+					"type":"nested",
+					"include_in_parent": true,
+					"properties":{
+					   	"mdate": {
+					      		"type": "date",
+					      		"format" : "YYYY-MM-dd HH:mm:ss"
+					   	},
+					   	"muser": {
+					      		"type": "string"
+					   	}
+					}
+				},
+				"location" : {
+					"type" : "geo_point"
+				}
+        		}
+    		}
+    	},
+	"order": "1",
+	"template": "<templatename>*"
+}

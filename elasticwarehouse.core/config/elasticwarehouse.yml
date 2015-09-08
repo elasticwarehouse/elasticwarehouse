@@ -1,0 +1,78 @@
+################## ElasticWarehouse Configuration Example ##################
+#
+# This file contains an overview of various configuration settings,
+# targeted at operations staff. Application developers should
+# consult the guide at <http://elasticwarehouse.org/guide>.
+#
+# The installation procedure is covered at
+# <http://elasticwarehouse.org/setup>.
+#
+# ElasticWarehouse comes with reasonable defaults for most settings,
+# so you can try it out without bothering with configuration.
+#
+# ElasticWarehouse is build on the top of Elasticsearch. To change Elasticsearch 
+# settings please modify elasticsearch.yml file. More information about
+# Elasticsearch configuration please find on the Elasticsearch guide website:
+# <http://elasticsearch.org/guide>.
+#
+# Most of the time, these defaults are just fine for running a production
+# cluster. If you're fine-tuning your cluster, or wondering about the
+# effect of certain configuration option, please _do ask_ on the
+# mailing list or IRC channel [http://elasticsearch.org/community].
+#
+################################### Mode ####################################
+
+# ElasticWarehouse can work in two modes : embedded and distributed.
+# In embedded mode ElasticWarehouse launches local Elasticsearch node wchich
+# can communicate to other ElasticWarehouse or Elasticsearch nodes in the cluster.
+# In distributed mode ElasticWarehouse connects to Elasticsearch cluster using
+# transport client.
+#
+mode.embedded: true
+
+elasticsearch.cluster: "elasticwarehouse"
+
+elasticsearch.template.storage.name: elasticwarehousestorage
+elasticsearch.template.tasks.name: elasticwarehousetasks
+
+elasticsearch.index.storage.name: elasticwarehousestorage
+elasticsearch.index.storage.type: files
+elasticsearch.index.storage.childtype: childfiles
+elasticsearch.index.tasks.name: elasticwarehousetasks
+elasticsearch.index.tasks.type: tasks
+
+######################## Settings for Embedded Mode ###########################
+# to change ElasticSearch configuration please modify elasticsearch.yml file
+grafana.port: 10500
+
+###################### Settings for Distributed Mode ##########################
+elasticsearch.hosts: "host1,host2:port"
+
+
+
+####################### ElasticWarehouse Rest API #############################
+elasticwarehouse.api.port : 10200
+log.level : DEBUG
+path.tmp : /tmp
+
+exclude.files : "avi mp4 mkv"
+#available sizes: 90, 180, 360, 720
+thumb.size : 360
+
+tasks.max.number: 2
+store.content: true
+store.folder: "/opt/upload"
+store.movescanned: false
+#################################### RRD settings ##############################
+#Path to directory containing RRD database with performance counters
+#rrd.db.path : /var/log/elasticwarehouse/data/
+#
+#Set attribute explicitly when you run few ElasticWarehouse instances (nodes) on the same machine. If not set, then hostname will be used.
+#rrd.hostname : localhost
+#
+#Debugging
+#rrd.debug.show: operatingsystem.ProcessCpuLoad memory.HeapMemoryUsage
+#
+#Enable/Disable performance counters collector feature
+rrd.enabled : true
+
