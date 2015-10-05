@@ -53,6 +53,12 @@ public class ElasticWarehouseAPIProcessorTask
 		public String targetfolder = "";
 		public boolean recurrence = false;
 		
+		//for rename
+		public String targetname = "";
+		
+		public boolean showrequest = false;
+		public boolean allhosts = false;
+		
 		public String folder = "";
 		
 		public String id = "";
@@ -71,11 +77,16 @@ public class ElasticWarehouseAPIProcessorTask
 			targetfolder = orgrequest.param("targetfolder",targetfolder);
 			recurrence = orgrequest.paramAsBoolean("recurrence", recurrence);
 			
+			targetname = orgrequest.param("targetname",targetname);
+			
 			folder = orgrequest.param("folder", folder);
 			id = orgrequest.param("id", id);
 	    	
 			size = orgrequest.paramAsInt("size", size);
 			from = orgrequest.paramAsInt("from", from);
+			
+			showrequest = orgrequest.paramAsBoolean("showrequest", showrequest);
+			allhosts = orgrequest.paramAsBoolean("allhosts", allhosts);
 		}
 	};
 	
@@ -96,10 +107,21 @@ public class ElasticWarehouseAPIProcessorTask
 		
 		params.path = request.getParameter("path");
 		params.targetfolder = request.getParameter("targetfolder");
+		params.targetname = request.getParameter("targetname");
+		
 		String srecurrence = request.getParameter("recurrence");
+		String sshowrequest = request.getParameter("showrequest");
+		String sallhosts = request.getParameter("allhosts");
+		
 		params.recurrence = false;
 		//if( targetfolder == null )
 		//	targetfolder = ResourceTools.preprocessFolderName(path);
+		if( sshowrequest != null )
+			params.showrequest = Boolean.parseBoolean(sshowrequest);
+		
+		if( sallhosts != null )
+			params.allhosts = Boolean.parseBoolean(sallhosts);
+		
 		if( srecurrence != null )
 			params.recurrence = Boolean.parseBoolean(srecurrence);
 		
@@ -187,6 +209,22 @@ public class ElasticWarehouseAPIProcessorTask
 					os.write(responser.taskAcceptedMessage("move id="+params.id + " to "+params.folder, 0, taskUUID));
 				}
 			}
+			else if(params.action.equals("rename"))
+			{
+				if( params.id == null)
+				{
+					os.write(responser.errorMessage("Please provide id of file or folder to be renamed.", ElasticWarehouseConf.URL_GUIDE_TASK));
+				}
+				else if( params.targetname == null || params.targetname.length()==0 )
+				{
+					os.write(responser.errorMessage("targetname cannot be empty.", ElasticWarehouseConf.URL_GUIDE_TASK));
+				}
+				else
+				{
+					ElasticWarehouseTask taskUUID = tasksManager_.rename(params.id, params.targetname);
+					os.write(responser.taskAcceptedMessage("rename id="+params.id, 0, taskUUID));
+				}
+			}
 			else if(params.action.equals("delete"))
 			{
 				//String id = request.getParameter("id");
@@ -247,9 +285,9 @@ public class ElasticWarehouseAPIProcessorTask
 			
 			LinkedList<String> tasks = null;
 			if( params.list.equals("active") )
-				tasks = tasksManager_.getTasks(false, conf_.getNodeName()/* NetworkTools.getHostName()*/, params.size, params.from );
+				tasks = tasksManager_.getTasks(false, conf_.getNodeName()/* NetworkTools.getHostName()*/, params.size, params.from, params.showrequest, params.allhosts );
 			else
-				tasks = tasksManager_.getTasks(null, conf_.getNodeName() /*NetworkTools.getHostName()*/, params.size, params.from);
+				tasks = tasksManager_.getTasks(null, conf_.getNodeName() /*NetworkTools.getHostName()*/, params.size, params.from, params.showrequest, params.allhosts);
 			
 			XContentBuilder builder = jsonBuilder().startArray();
 			for(String taskid : tasks)

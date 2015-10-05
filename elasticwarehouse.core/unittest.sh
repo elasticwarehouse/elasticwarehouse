@@ -13,7 +13,7 @@ FOLDER_TO_SCAN=/home/user/workspace/elasticwarehouse.core/src/test/resources
 FOLDER_TO_RECURRENCE_SCAN=/home/user/workspace/elasticwarehouse.core/src/test/resources/recurrence
 EXCLUDE_EXT='.avi|.mp4|.mkv'
 RUN_TESTS_STORE_DISABLED=0
-#SHOW_REQUEST='&showrequest=true'
+SHOW_REQUEST='&showrequest=true'
 
 function showok()
 {
@@ -49,10 +49,19 @@ function testIngestionCount()
 	local CNT_SCANNED=$(($CNT-$CNT_EXCLUDED+4))
 	TOTAL_FILES_TO_BE_INGESTED=$(($CNT-$CNT_EXCLUDED))
 	if [ $CNT_INGESTED -eq $CNT_SCANNED ]; then
-		showok "All files correctly ingested"
+		showok "All files correctly ingested #1"
 	else
 		showerror "Counts doesn't match, files total: $CNT_INGESTED, scanned: $CNT - $CNT_EXCLUDED +4 = $CNT_SCANNED"
 		#showerror "Counts doesn't match, files total: $CNT_INGESTED, scanned: $CNT - $CNT_EXCLUDED = $CNT_SCANNED"
+	fi
+
+	local UPLOADED_JSON=`curl $ESHOST/elasticwarehouseuploads/uploads/_count 2>/dev/null`
+	local CNT_UPLOADED=`echo $UPLOADED_JSON | jq -r '.count'`
+	local CNT_SCANNED=$(($CNT-$CNT_EXCLUDED))
+	if [ $CNT_UPLOADED -eq $CNT_SCANNED ]; then
+		showok "All files correctly ingested #2"
+	else
+		showerror "Counts doesn't match, files total: $CNT_UPLOADED, scanned: $CNT - $CNT_EXCLUDED  = $CNT_SCANNED"
 	fi
 }
 function testassert()
@@ -127,11 +136,16 @@ function executesearch()
 function executesearchall()
 {
 	local Q=$1
-	local SIZE=$2
+	local QFOLDER=$2
+	local SIZE=$3
+	local FOLDER=""
+	if [ "$QFOLDER" != "_" ]; then
+		FOLDER="&folder=$QFOLDER"
+	fi
 	if [ -z $SIZE ]; then
-		local RET=`curl -XGET "$HOST/_ewsearchall?q=$Q$SHOW_REQUEST" 2>/dev/null`
+		local RET=`curl -XGET "$HOST/_ewsearchall?q=$Q$FOLDER$SHOW_REQUEST" 2>/dev/null`
 	else
-		local RET=`curl -XGET "$HOST/_ewsearchall?q=$Q&size=$SIZE$SHOW_REQUEST" 2>/dev/null`
+		local RET=`curl -XGET "$HOST/_ewsearchall?q=$Q$FOLDER&size=$SIZE$SHOW_REQUEST" 2>/dev/null`
 	fi
 	LAST_SEARCH_IDS=( $( echo $RET | jq -r '.hits.hits[]._id' ) )
 	LAST_SEARCH_COUNT=${#LAST_SEARCH_IDS[@]}
@@ -173,6 +187,7 @@ function cleanall()
 {
 	curl -XDELETE "$ESHOST/elasticwarehousestorage/_query" -d' { "query": { "match_all": {} } }'
 	curl -XDELETE "$ESHOST/elasticwarehousetasks/_query" -d' { "query": { "match_all": {} } }'
+	curl -XDELETE "$ESHOST/elasticwarehouseuploads/_query" -d' { "query": { "match_all": {} } }'
 	echo ""
 }
 function waitfortask()
@@ -187,6 +202,10 @@ function waitfortask()
 	showinfo "Task finished, progress: $LAST_TASK_PROGRESS"
 	sleep 1
 }
+
+#executesearchall "*geo*" "/"
+#testassert $LAST_SEARCH_COUNT 10 "SearchingAll (size 10) for ^*geo*^"
+#exit
 
 ##########################################################
 if [ $RUN_TESTS_STORE_DISABLED -eq 1 ] ; then
@@ -237,8 +256,11 @@ executetask "action=mkdir&folder=/home/"
 executetask "action=mkdir&folder=/home/////"
 executetask "action=mkdir&folder=/home/zuko"
 executetask "action=mkdir&folder=/home/zuko/////"
+executetask "action=mkdir&folder=/%20home%20/%20zuko%20/////"
+executetask "action=mkdir&folder=%20/%20home%20/%20zuko%20/////%20"
 executetask "action=mkdir&folder=//////home////////zuko/////"
 executetask "action=mkdir&folder=/home/zuko2"
+executetask "action=mkdir&folder=/home/zuko2/"
 executetask "action=mkdir&folder=home:\\\\zuko2"	#to simulate windows paths
 executetask "action=mkdir&folder=home:\zuko2"		#to simulate windows paths
 executetask "action=mkdir&folder=home:\/zuko2"		#to simulate windows paths
@@ -248,6 +270,13 @@ waitfortask $LAST_TASK_ID
 
 executetask "action=rethumb"
 waitfortask $LAST_TASK_ID
+
+executebrowse "folder=/home/&size=10"
+FOLDER_HOME_ZUKO_ID=${LAST_BROWSE_IDS[0]}
+executetask "action=rename&id=$FOLDER_HOME_ZUKO_ID&targetname=zukonewfolder"
+waitfortask $LAST_TASK_ID
+#BASEFOLDER=/home/zuko
+BASEFOLDER=/home/zukonewfolder
 
 #check if all files have been ingested successfully
 testIngestionCount
@@ -259,10 +288,10 @@ executebrowse "folder=/home&size=10"
 testassert $LAST_BROWSE_COUNT 2 "Checking /home folder count"
 executebrowse "folder=/home/zuko2&size=1000"
 testassert $LAST_BROWSE_COUNT 0 "Checking /home/zuko2 folder count"
-executebrowse "folder=/home/zuko/&size=123"
-testassert $LAST_BROWSE_COUNT 123 "Checking /home/zuko folder count"
-executebrowse "folder=/home/zuko/&size=9000"
-testassert $LAST_BROWSE_COUNT $TOTAL_FILES_TO_BE_INGESTED "Checking /home/zuko folder count"
+executebrowse "folder=$BASEFOLDER/&size=123"
+testassert $LAST_BROWSE_COUNT 123 "Checking $BASEFOLDER folder count"
+executebrowse "folder=$BASEFOLDER/&size=9000"
+testassert $LAST_BROWSE_COUNT $TOTAL_FILES_TO_BE_INGESTED "Checking $BASEFOLDER folder count"
 
 #choose 3 files to test move & delete operations
 FILE_TO_MOVE1=${LAST_BROWSE_IDS[5]}
@@ -285,8 +314,8 @@ testassert $LAST_BROWSE_COUNT 2 "Checking /home/zuko2 folder count"		#should ret
 executebrowse "folder=/home&size=9000"
 testassert $LAST_BROWSE_COUNT 4 "Checking /home/ folder count"			#should return 2 folders and 2 files
 
-executebrowse "folder=/home/zuko/&size=9000"
-testassert $LAST_BROWSE_COUNT $(($TOTAL_FILES_TO_BE_INGESTED-4)) "Checking /home/zuko folder count"	#4 files have been moved out from /home/zuko
+executebrowse "folder=$BASEFOLDER/&size=9000"
+testassert $LAST_BROWSE_COUNT $(($TOTAL_FILES_TO_BE_INGESTED-4)) "Checking $BASEFOLDER folder count"	#4 files have been moved out from /home/zuko
 
 #test search
 executesearch '{
@@ -309,7 +338,7 @@ testassert $LAST_SEARCH_COUNT 0 "Searching in /home/user for ^MAGNETIC^"			#shou
 
 executesearch '{
    "query": {
-      "folder": "/home/zuko",
+      "folder": "'$BASEFOLDER'",
       "all": "MAGNETIC"
    },
    "options": {
@@ -323,14 +352,14 @@ executesearch '{
       "direction": "desc"
    }
 }'
-testassert $LAST_SEARCH_COUNT 2 "Searching in /home/zuko for ^MAGNETIC^"			#should return 2 files
+testassert $LAST_SEARCH_COUNT 2 "Searching in $BASEFOLDER for ^MAGNETIC^"			#should return 2 files
 
 FILE_TO_MOVE=${LAST_SEARCH_IDS[0]}
-executetask "action=move&id=$FILE_TO_MOVE&folder=/home/zuko/otherfiles"
+executetask "action=move&id=$FILE_TO_MOVE&folder=$BASEFOLDER/otherfiles"
 
 executesearch '{
    "query": {
-      "folder": "/home/zuko",
+      "folder": "'$BASEFOLDER'",
       "all": "MAGNETIC"
    },
    "options": {
@@ -344,7 +373,7 @@ executesearch '{
       "direction": "desc"
    }
 }'
-testassert $LAST_SEARCH_COUNT 1 "Searching in /home/zuko for ^MAGNETIC^"			#should return 1 file
+testassert $LAST_SEARCH_COUNT 1 "Searching in $BASEFOLDER for ^MAGNETIC^"			#should return 1 file
 
 executesearch '{
    "query": {
@@ -403,7 +432,22 @@ testassert $LAST_SEARCH_COUNT 13 "Searching in /home* for ^*geo*^"			#should ret
 executesearchall "*geo*"
 testassert $LAST_SEARCH_COUNT 10 "SearchingAll (size 10) for ^*geo*^"
 
-executesearchall "*geo*" 20
+executesearchall "*geo*" "/"
+testassert $LAST_SEARCH_COUNT 10 "SearchingAll (size 10) for ^*geo*^"
+
+executesearchall "*geo*" "/home/user"
+testassert $LAST_SEARCH_COUNT 0 "SearchingAll (size 10) for ^*geo*^"
+
+executesearchall "*geo*" "$BASEFOLDER"
+testassert $LAST_SEARCH_COUNT 10 "SearchingAll (size 10) for ^*geo*^"
+
+executesearchall "*geo*" "$BASEFOLDER" 20
+testassert $LAST_SEARCH_COUNT 13 "SearchingAll (size 20) for ^*geo*^"
+
+executesearchall "*geo*" "$BASEFOLDER/*" 20
+testassert $LAST_SEARCH_COUNT 13 "SearchingAll (size 20) for ^*geo*^"
+
+executesearchall "*geo*" "$BASEFOLDER*" 20
 testassert $LAST_SEARCH_COUNT 13 "SearchingAll (size 20) for ^*geo*^"
 
 
@@ -505,8 +549,8 @@ executesearch '{
 }'
 testassert $LAST_SEARCH_COUNT 4 "Polygon GEO Searching"
 
-executetask "action=move&id=$FILE_TO_MOVE&folder=/home/zuko"
-executetask "action=rmdir&folder=/home/zuko/otherfiles"
+executetask "action=move&id=$FILE_TO_MOVE&folder=$BASEFOLDER"
+executetask "action=rmdir&folder=$BASEFOLDER/otherfiles"
 
 
 executesearch '{
@@ -569,6 +613,25 @@ executesearch '{
 }'
 testassert $LAST_SEARCH_COUNT 2 "Searching for text Adobe"
 
+executesearch '{
+   "query": {
+      "folder": "/*",
+      "all" : "Photoshop",
+      "location": {
+         "distance": "30000000000km",
+         "lat": 54.509998,
+         "lon": 18.530001
+      }
+   },
+   "options": {
+      "highlight": "true"
+   },
+   "sort": {
+      "field": "filename",
+      "direction": "asc"
+   }
+}'
+testassert $LAST_SEARCH_COUNT 2 "Searching for folder, location and text"
 
 executesearch '{
     "query" : {
@@ -624,11 +687,14 @@ testassert $IMGWIDTH 103 "Checking thumb image width=103"
 #imagewidth
 
 # play with actions
+executebrowse "folder=$BASEFOLDER&size=9000"
+testassert $LAST_BROWSE_COUNT $(($TOTAL_FILES_TO_BE_INGESTED-4)) "Checking $BASEFOLDER folder count1"
+curl -XGET "$HOST/_ewinfo?id=$FILE_TO_DELETE1"
 executetask "action=delete&id=$FILE_TO_DELETE1"		#delete 1 file from /home/zuko/
-executebrowse "folder=/home/zuko&size=9000"
-testassert $LAST_BROWSE_COUNT $(($TOTAL_FILES_TO_BE_INGESTED-5)) "Checking /home/zuko folder count"	#4 files have been moved out from /home/zuko and 1 file deleted
+executebrowse "folder=$BASEFOLDER&size=9000"
+testassert $LAST_BROWSE_COUNT $(($TOTAL_FILES_TO_BE_INGESTED-5)) "Checking $BASEFOLDER folder count2"	#4 files have been moved out from /home/zuko and 1 file deleted
 
-executetask "action=rmdir&folder=/home/zuko////////"	#delete folder /home/zuko
+executetask "action=rmdir&folder=$BASEFOLDER////////"	#delete folder /home/zuko
 
 executebrowse "folder=/home/&size=9000"
 testassert $LAST_BROWSE_COUNT 3 "Checking /home folder count"	#2 files and zuko2 folder

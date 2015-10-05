@@ -52,9 +52,10 @@ import org.rrd4j.core.Sample;
 public class RRDManager
 {
 	String rrdPath_= null;
+	String orginalrrdPath_= null;
 	List<String> sources_ = new LinkedList<String>();
 	private final static Logger LOGGER = Logger.getLogger(RRDManager.class.getName());
-	public static final int MAXDATASOURCENAMELEN = 20; 
+	public static final int MAXDATASOURCENAMELEN = 20;
 	private RrdDb rrdDb_ = null;
 	boolean readOnly_ = false;
 	
@@ -81,11 +82,34 @@ public class RRDManager
 	{
 		initDictionary();
 		this.rrdPath_ = rrdPath;
+		if( orginalrrdPath_ == null )
+			orginalrrdPath_ = rrdPath;
 		this.readOnly_ = readOnly;
 		
 		initDataSources(sources, cutSourcesto20chars);
 		
-		File f = new File(this.rrdPath_);
+		//File f = new File(this.rrdPath_);
+		File f = null;
+		//check whether there is new rrd file (workaround for windows where rrd files still have locks after closing file handle)
+		String newfilename = FileTools.getLatestFilenameCopy(this.rrdPath_);
+		if( newfilename != null && this.readOnly_ == false)
+		{
+			boolean ret = FileTools.copy(newfilename, this.rrdPath_);
+			if( ret )
+			{
+				FileTools.delete(newfilename);
+				String fnme = FileTools.getLatestFilenameCopy(this.orginalrrdPath_);
+				while( fnme != null )
+				{
+					FileTools.delete(fnme);
+					fnme = FileTools.getLatestFilenameCopy(this.orginalrrdPath_);
+				}
+			}
+		}
+		f = new File(this.rrdPath_);
+
+		
+		
 		boolean opened = false;
 		int attempt=0;
 		int attempt_max=5;
@@ -150,6 +174,7 @@ public class RRDManager
 	{
 		if( rrdDb_ != null )
 			rrdDb_.close();
+		rrdDb_ = null;
 	}
 	private void initDictionary()
 	{
@@ -181,16 +206,16 @@ public class RRDManager
 		renameDictionary.put("TotalPhysicalMemorySize",     "TotalPhysicalMemory" );	//for compatibility with Windows (Window shas TotalPhysicalMemory, linux: TotalPhysicalMemorySize
 		
 	}
-	public boolean expandRRDFile(LinkedList<String> customattributes) throws IOException, ParseException
+	public static boolean expandRRDFile(String tmpfolder, String filenamepath, LinkedList<String> customattributes, String targetfilenamepath) throws IOException, ParseException
 	{
 		//sources_ = customattributes;
 		//RrdDef def = rrdDb_.getRrdDef();
 		LinkedList<DsDef> newdefs = new LinkedList<DsDef>();
-		String[] datasources = rrdDb_.getDsNames();
-		initDataSources(customattributes, true);
-		for(String sourceName : sources_)
+		//String[] datasources = rrdDb_.getDsNames();
+		//initDataSources(customattributes, true);
+		for(String sourceName : customattributes/*sources_*/)
         {
-			boolean found = false;
+			/*boolean found = false;
 			for(String currentsourceName : datasources)
 	        {
 				if( currentsourceName.equals(sourceName) )
@@ -198,38 +223,38 @@ public class RRDManager
 					found = true;
 					break;
 				}
-	        }
-			if( !found )
-			{
-				LOGGER.info("Adding: "+sourceName+" in " + this.rrdPath_);
+	        }*/
+			//if( !found )
+			//{
+				LOGGER.info("Adding: "+sourceName+" in " + targetfilenamepath + "(org:"+filenamepath+")");
 				//def.addDatasource(sourceName, GAUGE, 600, 0, Double.NaN);
 				newdefs.add(new DsDef(sourceName, GAUGE, 600, 0, Double.NaN));
-			}
+			//}
         }
 		if( !newdefs.isEmpty() )
 		{
-			if( rrdDb_ != null )
+			/*if( rrdDb_ != null )
 			{
 				rrdDb_.close();
 				rrdDb_ = null;
-			}
+			}*/
 			
 			MonitoringManager.closeFilesInElasticSearchMonitors();
 			
-			String tmpFilename = tmpFolder_+"/"+FilenameUtils.getBaseName(rrdPath_)+".rrd.tmp";
-			String tmpFilenameCopy = tmpFolder_+"/"+FilenameUtils.getBaseName(rrdPath_)+".rrd.tmpcopy";
+			String tmpFilename = tmpfolder+"/"+FilenameUtils.getBaseName(filenamepath)+".rrd.tmp";
+			//String tmpFilenameCopy = tmpfolder+"/"+FilenameUtils.getBaseName(filenamepath)+".rrd.tmpcopy";
 			
 			Files.deleteIfExists(new File(tmpFilename).toPath());
-			Files.deleteIfExists(new File(tmpFilenameCopy).toPath());
-			FileTools.copy(rrdPath_, tmpFilenameCopy);
-			int attemp=0;
+			//Files.deleteIfExists(new File(tmpFilenameCopy).toPath());
+			FileTools.copy(filenamepath, tmpFilename);
+			/*int attemp=0;
 			for(;;)
 			{
 				if( attemp == 5)
 					break;
 				try{
 					attemp++;
-					Files.deleteIfExists(new File(rrdPath_).toPath());
+					Files.deleteIfExists(new File(filenamepath).toPath());
 					break;
 				}catch(java.nio.file.FileSystemException e)
 				{
@@ -242,16 +267,16 @@ public class RRDManager
 				{
 					EWLogger.logerror(e);
 				}
-			}
+			}*/
 			
-			if( attemp < 5) 
-			{
-				RrdToolkit.addDatasources(tmpFilenameCopy, tmpFilename , newdefs);
-				FileTools.copy(tmpFilename, rrdPath_);
+			//if( attemp < 5) 
+			//{
+				RrdToolkit.addDatasources(tmpFilename, targetfilenamepath , newdefs);
+				//FileTools.copy(tmpFilename, filenamepath);
 				MonitoringManager.reopenFilesInElasticSearchMonitors();
 				Files.deleteIfExists(new File(tmpFilename).toPath());
-				Files.deleteIfExists(new File(tmpFilenameCopy).toPath());
-			}
+				//Files.deleteIfExists(new File(tmpFilenameCopy).toPath());
+			//}
 		}
 		return true;
 	}
@@ -319,7 +344,7 @@ public class RRDManager
 		}
 		return found;
 	}
-	public boolean addValue(long t, LinkedList<AtrrValue> attval /*LinkedList<String> attrs, LinkedList<Double> factors*/) throws IOException
+	public boolean addValue(long t, LinkedList<AtrrValue> attval /*LinkedList<String> attrs, LinkedList<Double> factors*/) throws IOException, ParseException
 	{			
         Sample sample = rrdDb_.createSample();
         sample.setTime(t);
@@ -330,11 +355,45 @@ public class RRDManager
         	String attrkey = transformSourceName(att.key_);
         	if( att.value_ != Double.NaN )
 			{
+        		boolean retryInsert = false; 
 				try{
 					sample.setValue(attrkey, att.value_);
 				}catch(java.lang.IllegalArgumentException e) {
-					EWLogger.logerror(e);
-					LOGGER.error("Cannot save performance counter in "+rrDbBaseFilename_+": "+attrkey+" -> "+att.value_+". "+e.getMessage() );
+					if( this.readOnly_  )
+					{
+						EWLogger.logerror(e);
+						LOGGER.error("Cannot save performance counter in "+rrDbBaseFilename_+": "+attrkey+" -> "+att.value_+". "+e.getMessage() );
+					}else{
+						LOGGER.info("Cannot save performance counter in "+rrDbBaseFilename_+": "+attrkey+" -> "+att.value_+". Trying to expand RRD file" );
+						retryInsert = true;	
+					}
+					
+				}
+				
+				if( retryInsert && this.readOnly_ == false /*check readOnly_ value for double check, if adding, then alwatys whould be false */ )
+				{
+					String newfilename = FileTools.generateNewFilename(this.orginalrrdPath_);
+					LOGGER.info("Expanding "+rrDbBaseFilename_+" RRD as new file: "+newfilename );
+					LinkedList<String> customattributes = new LinkedList<String>();
+					customattributes.add(attrkey);
+					if( expandRRDFile(tmpFolder_, rrdPath_, customattributes, newfilename) )
+					{
+						Dispose();
+						rrdPath_ = newfilename;
+						try {
+							reopenfile();
+							
+							sample = rrdDb_.createSample();
+					        sample.setTime(t);
+					        sample.setValue(attrkey, att.value_);
+					        
+						} catch (DDRFileNotFoundException e) {
+							LOGGER.error("Cannot reopen RRD file "+rrdPath_+" after expansion");
+							EWLogger.logerror(e);
+							e.printStackTrace();
+						}
+					}
+
 				}
         	}
         }

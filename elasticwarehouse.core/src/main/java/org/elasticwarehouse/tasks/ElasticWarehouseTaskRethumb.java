@@ -110,7 +110,7 @@ public class ElasticWarehouseTaskRethumb extends ElasticWarehouseTask {
 				if( ret )
 					progress_ = 100;
 				else
-					errorcode_ = 10;
+					errorcode_ = ERROR_TASK_RETHUMB_OTHER_EXCEPTION;
 					
 				indexTask();
 		    }  

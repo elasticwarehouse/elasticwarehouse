@@ -191,6 +191,14 @@ public class ElasticSearchMonitor  extends PerfMon {
 		}
 	}*/
 
+	public boolean IsPerformanceCounterExist(String filebasename)
+	{
+		RRDManager rrd = rrdmanagers_.get(filebasename);
+		if( rrd == null )
+			return false;
+		else
+			return true;
+	}
 	public void saveCustomPerformanceCounter(String filebasename, LinkedList<AtrrValue> attval) throws IOException, ParseException
 	{
 		RRDManager rrd = rrdmanagers_.get(filebasename);

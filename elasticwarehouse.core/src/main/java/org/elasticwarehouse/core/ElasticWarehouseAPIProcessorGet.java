@@ -21,6 +21,8 @@ package org.elasticwarehouse.core;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Map;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -44,7 +46,7 @@ public class ElasticWarehouseAPIProcessorGet extends ElasticWarehouseAPIProcesso
 
 	private ElasticWarehouseConf conf_;
 	private ElasticWarehouseReqRespHelper responser = new ElasticWarehouseReqRespHelper();
-	//private ElasticSearchAccessor elasticSearchAccessor_;
+	private ElasticSearchAccessor elasticSearchAccessor_;
 	
 	public class ElasticWarehouseAPIProcessorGetParams
 	{
@@ -59,7 +61,7 @@ public class ElasticWarehouseAPIProcessorGet extends ElasticWarehouseAPIProcesso
 	
 	public ElasticWarehouseAPIProcessorGet(ElasticWarehouseConf conf, ElasticSearchAccessor elasticSearchAccessor) {
 		conf_ = conf;
-		//elasticSearchAccessor_ = elasticSearchAccessor;
+		elasticSearchAccessor_ = elasticSearchAccessor;
 	}
 
 	
@@ -77,7 +79,10 @@ public class ElasticWarehouseAPIProcessorGet extends ElasticWarehouseAPIProcesso
 			GetProcessorFileData fd = processRequest(esClient, os, params);
 			if( fd != null && fd.readyToWrite_ )
 			{
+				if( params.type == null || params.type.equals("thumb") == false )
+					elasticSearchAccessor_.updateLastAccessTime(params.id);	//update timestamp only for downloads, not thumbs 
 				httpresponse.addHeader("Content-Disposition", "attachment; filename="+fd.filename);
+				httpresponse.addHeader("EwStatusFound", "OK");
 				httpresponse.setContentType(fd.filetype);
 				os.write(fd.bytes_);
 				ret = true;
@@ -118,14 +123,14 @@ public class ElasticWarehouseAPIProcessorGet extends ElasticWarehouseAPIProcesso
 						//os.write(filedata.bytes_);
 					}else{
 						if( params.type.equals("thumb"))
-							os.write(responser.errorMessage("Cannot get thumb for provided id.", ElasticWarehouseConf.URL_GUIDE_GET));
+							os.write(responser.errorMessage("Cannot get thumb for provided id "+params.id, ElasticWarehouseConf.URL_GUIDE_GET));
 						else
 							os.write(responser.errorMessage("File has been indexed without it's content. Origin file is also not available at path: "+ filedata.filepath, ElasticWarehouseConf.URL_GUIDE_GET));								
 					}
 					
 				}
 			}else{
-				os.write(responser.errorMessage("provided id doesn't exist. Please provide correct file Id.", ElasticWarehouseConf.URL_GUIDE_GET));
+				os.write(responser.errorMessage("provided id '" + params.id + "' doesn't exist. Please provide correct file Id.", ElasticWarehouseConf.URL_GUIDE_GET));
 			}
 		}
 		return filedata;

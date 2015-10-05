@@ -79,7 +79,7 @@ public class PerformanceMonitor extends PerfMon
         	String typeFullName = obj.toString();
         	String typeShortName = getUniqueTypeNameString(typeFullName);
         	if( availablePerformaceTypes_.containsKey(typeShortName.toLowerCase()))
-        		throw new ParseException("Type: " + typeShortName.toLowerCase() + " is duplicated, cannot build performance types list",0);
+        		throw new ParseException("Type: " + typeShortName.toLowerCase() + " is duplicated, cannot build performance types list (fullname:"+typeFullName+")",0);
         	        	
         	LinkedList<String> attributes = getAvailableAttributesByLongName(typeFullName/*typeShortName.toLowerCase()*/, true);
         	if( attributes != null )
@@ -307,7 +307,7 @@ public class PerformanceMonitor extends PerfMon
 	{
 		String ret = "";
 		Pattern patternType = Pattern.compile("type=(\\w*)");
-		Pattern patternName = Pattern.compile("name=([a-zA-Z0-9- ]*)");
+		Pattern patternName = Pattern.compile("name=([a-zA-Z0-9-\\[\\] ]*)");
 		Matcher matcher = patternType.matcher(objName);
 		if (matcher.find())
 		{

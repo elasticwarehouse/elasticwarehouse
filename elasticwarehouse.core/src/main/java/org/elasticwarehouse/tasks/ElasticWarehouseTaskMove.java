@@ -78,7 +78,7 @@ public class ElasticWarehouseTaskMove extends ElasticWarehouseTask {
 		try {
 			toolset = new FolderTools(acccessor_, conf_);
 			
-			if( acccessor_.folderExists(targetfolder_) == false )
+			if( acccessor_.folderExists(targetfolder_, false) == false )
 			{
 				FolderToolsResult mkresult = toolset.createFolder(targetfolder_);
 				if( mkresult.errorCode_ != 0 )
@@ -99,7 +99,7 @@ public class ElasticWarehouseTaskMove extends ElasticWarehouseTask {
 		} catch (Exception e) {
 			EWLogger.logerror(e);
 			e.printStackTrace();
-			errorcode_ = 50;
+			errorcode_ = ERROR_TASK_MOVE_OTHER_EXCEPTION;
 			comment_ = "Error:" + e.getMessage();
 		}
 		

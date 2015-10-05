@@ -82,6 +82,16 @@
 				"imageheight" : { "type" : "integer" },
 				"imagexresolution" : { "type" : "integer" },
 				"imageyresolution" : { "type" : "integer" },
+				"customkeywords": { "type": "string", "analyzer":"lowercase_analyzer", 
+							"term_vector":"with_positions_offsets", 
+							"index":"analyzed", 
+							"index_options":"offsets"
+						},
+				"customcomments": { "type": "string", "analyzer":"lowercase_analyzer", 
+							"term_vector":"with_positions_offsets", 
+							"index":"analyzed", 
+							"index_options":"offsets"
+						},
 				"filemeta" : { 
 					"type": "nested",
 					"include_in_parent": true,

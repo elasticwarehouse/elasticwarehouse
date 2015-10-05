@@ -29,7 +29,7 @@ public abstract class BaseRestHandlerESVer extends BaseRestHandler {
 
 	public BaseRestHandlerESVer(Settings settings, RestController controller, Client client)
 	{
-		//super(settings, controller, client); 	//for ES >=1.4.0
-		super(settings, client);				//for ES<=1.3.9 
+		super(settings, controller, client); 	//for ES >=1.4.0
+		//super(settings, client);				//for ES<=1.3.9 
 	}
 }

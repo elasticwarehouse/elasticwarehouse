@@ -31,6 +31,7 @@ import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.client.Client;
+import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.rest.RestRequest;
 import org.elasticsearch.search.highlight.FastVectorHighlighter;
@@ -44,6 +45,7 @@ public class ElasticWarehouseAPIProcessorSearch extends ElasticWarehouseAPIProce
 	public class ElasticWarehouseAPIProcessorSearchParams
 	{
 		public String q = "";
+		public String qfolder = "";
 		public int size = 10;
 		public int from = 0;
 		public int thumbsize = 180;
@@ -64,6 +66,7 @@ public class ElasticWarehouseAPIProcessorSearch extends ElasticWarehouseAPIProce
 		public void readFrom(RestRequest orgrequest)
 		{
 			q = orgrequest.param("q");
+			qfolder = orgrequest.param("folder", qfolder);
 	    	size = orgrequest.paramAsInt("size", size);
 	    	from = orgrequest.paramAsInt("from", from);
 	    	showrequest = orgrequest.paramAsBoolean("showrequest", showrequest);
@@ -94,6 +97,8 @@ public class ElasticWarehouseAPIProcessorSearch extends ElasticWarehouseAPIProce
 			if( reqmethod.equals("GET") )
 			{
 				params.q = request.getParameter("q").toLowerCase();
+				if( request.getParameter("folder")!=null)
+					params.qfolder = request.getParameter("folder").toLowerCase();
 				params.size = ParseTools.parseIntDirect(request.getParameter("size"), params.size);
 				params.from = ParseTools.parseIntDirect(request.getParameter("from"), params.from);
 				params.fragmentSize = ParseTools.parseIntDirect(request.getParameter("fragmentSize"), params.fragmentSize);
@@ -134,13 +139,29 @@ public class ElasticWarehouseAPIProcessorSearch extends ElasticWarehouseAPIProce
 					        .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
 					        .setFetchSource(null, new String[] {"filecontent","filetext"});
 					        //.setQuery(QueryBuilders.termQuery("_all", q))
+					
+					BoolQueryBuilder bqbuilder = QueryBuilders.boolQuery();
+					if( params.qfolder.length() > 0 )
+					{
+						String fldr = params.qfolder;
+						fldr = ResourceTools.preprocessFolderName(fldr.toLowerCase());
+					
+						if( params.qfolder.contains("*") )
+							bqbuilder.must(QueryBuilders.wildcardQuery(ElasticWarehouseMapping.FIELDFOLDERNA, fldr));
+						else
+							bqbuilder.must(QueryBuilders.prefixQuery(ElasticWarehouseMapping.FIELDFOLDERNA, fldr) );
+					}
+							
 					if( params.q.contains("*") )
-						esreq.setQuery(QueryBuilders.queryString(params.q).field("filename").field("filetitle").field("filetext").field("filemeta.metavaluetext"));
+						bqbuilder.must(QueryBuilders.queryString(params.q)
+								.field("filename").field("filetitle").field("filetext").field("filemeta.metavaluetext")
+								.field("customkeywords").field("customcomments"));
 					else
-						esreq.setQuery(QueryBuilders.multiMatchQuery(params.q, "filename","filetitle", "filetext", 
-					        											"filemeta.metavaluetext" /*, "filemeta.metavaluedate", "filemeta.metavaluelong"*/));
+						bqbuilder.must(QueryBuilders.multiMatchQuery(params.q, "filename","filetitle", "filetext", 
+					        											"filemeta.metavaluetext", "customkeywords", "customcomments" /*, "filemeta.metavaluedate", "filemeta.metavaluelong"*/));
 					        //.setPostFilter(FilterBuilders.rangeFilter("age").from(12).to(18))   // Filter
 					        //.setExplain(true)
+					esreq.setQuery(bqbuilder);
 					esreq.setVersion(true)
 					        .setSize(params.size)
 					        .setFrom(params.from);
@@ -150,6 +171,10 @@ public class ElasticWarehouseAPIProcessorSearch extends ElasticWarehouseAPIProce
 						esreq.addHighlightedField(new HighlightBuilder.Field("filetitle").highlighterType("fvh").fragmentSize(params.fragmentSize).preTags(params.pre_tags).postTags(params.post_tags) );
 						esreq.addHighlightedField(new HighlightBuilder.Field("filetext").highlighterType("fvh").fragmentSize(params.fragmentSize).preTags(params.pre_tags).postTags(params.post_tags) );
 						esreq.addHighlightedField(new HighlightBuilder.Field("filemeta.metavaluetext").highlighterType("fvh").fragmentSize(params.fragmentSize).preTags(params.pre_tags).postTags(params.post_tags) );
+						
+						esreq.addHighlightedField(new HighlightBuilder.Field("customkeywords").highlighterType("fvh").fragmentSize(params.fragmentSize).preTags(params.pre_tags).postTags(params.post_tags) );
+						esreq.addHighlightedField(new HighlightBuilder.Field("customcomments").highlighterType("fvh").fragmentSize(params.fragmentSize).preTags(params.pre_tags).postTags(params.post_tags) );
+						
 					}
 					if( params.showrequest )
 				    {

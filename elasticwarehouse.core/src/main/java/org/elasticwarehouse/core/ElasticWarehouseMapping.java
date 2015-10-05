@@ -53,6 +53,9 @@ public class ElasticWarehouseMapping {
 			"location", 
 			"filemodification" ));
 	
+	public static final LinkedList<String> availableFieldsForModification = new LinkedList<String>(
+			Arrays.asList("customkeywords","customcomments"));
+	
 	public static final String FIELDSCORE = "score";
 	public static final String FIELDALL = "all";
 	public static final String FIELDFOLDER = "folder";

@@ -22,7 +22,6 @@ package org.elasticwarehouse.core;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Enumeration;
@@ -32,6 +31,7 @@ import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 public class ResourceTools {
@@ -146,7 +146,7 @@ public class ResourceTools {
 	
 	public static String preprocessFolderName(String infolder)
 	{
-		String folder = infolder.toLowerCase();
+		String folder = infolder.toLowerCase().trim();
 		folder = folder.replaceAll("[\\\\]+", "/");
 		folder = folder.replaceAll("[/]+", "/");
 		folder = folder.replaceAll("^([a-z]+):", "/$1");	//for Windows C:/, D:/ etc.
@@ -156,7 +156,12 @@ public class ResourceTools {
 			folder = "/"+folder;
 		if( folder.endsWith("/") == false && folder.endsWith("*")==false )
 			folder = folder+"/";
-		
-		return folder;
+		String[] fparts = folder.split("/");
+		for(int i=0;i<fparts.length;i++)
+			fparts[i] = fparts[i].trim();
+		folder = StringUtils.join(fparts, "/");
+		if( folder.endsWith("/") == false && folder.endsWith("*")==false )
+			folder = folder+"/";
+		return folder.trim();
 	}
 }

@@ -71,14 +71,19 @@ public class ElasticWarehouseConf {
 	public static final String ESTRANSPORTHOSTS = "elasticsearch.hosts";
 	public static final String ESCLUSTER = "elasticsearch.cluster";
 	
-	public static final String ES_INDEX_STORAGE_NAME = "elasticsearch.index.storage.name";
-	public static final String ES_INDEX_STORAGE_TYPE = "elasticsearch.index.storage.type";
-	public static final String ES_INDEX_STORAGE_CHILDTYPE = "elasticsearch.index.storage.childtype";
-	public static final String ES_INDEX_TASKS_NAME = "elasticsearch.index.tasks.name";
-	public static final String ES_INDEX_TASKS_TYPE = "elasticsearch.index.tasks.type";
+	public static final String ES_INDEX_STORAGE_NAME 		= "elasticsearch.index.storage.name";
+	public static final String ES_INDEX_STORAGE_TYPE 		= "elasticsearch.index.storage.type";
+	public static final String ES_INDEX_STORAGE_CHILDTYPE 	= "elasticsearch.index.storage.childtype";
 	
-	public static final String ES_TEMPLATE_STORAGE_NAME = "elasticsearch.template.storage.name";
-	public static final String ES_TEMPLATE_TASKS_NAME = "elasticsearch.template.tasks.name";
+	public static final String ES_INDEX_UPLOADS_NAME 		= "elasticsearch.index.uploads.name";
+	public static final String ES_INDEX_UPLOADS_TYPE 		= "elasticsearch.index.uploads.type";
+	
+	public static final String ES_INDEX_TASKS_NAME 			= "elasticsearch.index.tasks.name";
+	public static final String ES_INDEX_TASKS_TYPE 			= "elasticsearch.index.tasks.type";
+	
+	public static final String ES_TEMPLATE_STORAGE_NAME 	= "elasticsearch.template.storage.name";
+	public static final String ES_TEMPLATE_TASKS_NAME 		= "elasticsearch.template.tasks.name";
+	public static final String ES_TEMPLATE_UPLOADS_NAME 	= "elasticsearch.template.uploads.name";
 	
 	public static final String TASKSMAXNUMBER = "tasks.max.number";
 	public static final int TASKSMAXNUMBERDEFAULT = 2;
@@ -113,6 +118,8 @@ public class ElasticWarehouseConf {
 	public static final String FIELD_THUMB_AVAILABLE = "filethumb_available";
 	public static final String FIELD_THUMB_THUMB = "filethumb_thumb";
 	public static final String FIELD_THUMB_THUMBDATE = "filethumb_thumbdate";
+
+	
 	
 	
 	public ElasticWarehouseConf()

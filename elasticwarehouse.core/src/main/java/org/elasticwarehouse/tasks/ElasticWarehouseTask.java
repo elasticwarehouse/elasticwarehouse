@@ -44,6 +44,28 @@ public abstract class ElasticWarehouseTask {
 	
 	protected DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 	
+	public static final int ERROR_TASK_WRONG_PARAMETERS = 10;
+	
+	public static final int ERROR_TASK_SCAN_OTHER_EXCEPTION = 20;
+	
+	public static final int ERROR_TASK_RETHUMB_OTHER_EXCEPTION = 30;
+	
+	public static final int ERROR_TASK_RENAME_OTHER_EXCEPTION = 40;
+	public static final int ERROR_TASK_RENAME_ROOT_CANNOT_BE_RENAMED = 41;
+	
+	public static final int ERROR_TASK_MOVE_OTHER_EXCEPTION = 50;
+	public static final int ERROR_TASK_MOVE_FOLDERS_CANNOT_BE_MOVED = 51;
+	public static final int ERROR_TASK_MOVE_CANNOT_PROCESS = 52;
+
+	public static final int ERROR_TASK_DELETE_OTHER_EXCEPTION = 60;
+
+	public static final int ERROR_TASK_RMDIR_OTHER_EXCEPTION = 70;
+	public static final int ERROR_TASK_RMDIR_FOLDER_DOESNT_EXIST = 71;
+
+	public static final int ERROR_TASK_CREATE_OTHER_EXCEPTION = 80;
+	public static final int ERROR_TASK_CREATE_FOLDER_ALREADY_EXIST = 81;
+	
+	
 	protected int progress_ = 0;
 	protected int errorcode_ = 0;
 	protected Date submitdate_ = null;
@@ -56,7 +78,7 @@ public abstract class ElasticWarehouseTask {
 	
 	protected String taskId_ = "";
 	
-	ElasticSearchAccessor acccessor_ = null;
+	protected ElasticSearchAccessor acccessor_ = null;
 
 	protected boolean interrupt_ = false;
 
@@ -82,7 +104,8 @@ public abstract class ElasticWarehouseTask {
 		submitdate_ = ParseTools.isDate(source.get("submitdate").toString());
 		if( source.get("enddate") != null )
 			enddate_ = ParseTools.isDate(source.get("enddate").toString());
-        comment_  = source.get("comment").toString();
+		if( source.get("comment") != null )
+			comment_  = source.get("comment").toString();
         //hostname_  = source.get("hostname").toString();
         finished_ = Boolean.parseBoolean(source.get("finished").toString() );
         cancelled_ = Boolean.parseBoolean(source.get("cancelled").toString() );
@@ -154,12 +177,14 @@ public abstract class ElasticWarehouseTask {
 				response = acccessor_.getClient().prepareIndex(conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_TASKS_NAME) /*ElasticWarehouseConf.defaultTasksIndexName_*/, 
 						conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_TASKS_TYPE) /*ElasticWarehouseConf.defaultTasksTypeName_*/, taskId_)
 		        .setSource( getJsonSourceBuilder() )
+		        .setRefresh(true)
 		        .execute()
 		        .actionGet();
 			else
 				response = acccessor_.getClient().prepareIndex(conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_TASKS_NAME) /*ElasticWarehouseConf.defaultTasksIndexName_*/, 
 						conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_TASKS_TYPE) /*ElasticWarehouseConf.defaultTasksTypeName_*/ )
 			        .setSource( getJsonSourceBuilder() )
+			        .setRefresh(true)
 			        .execute()
 			        .actionGet();
 			
@@ -174,6 +199,7 @@ public abstract class ElasticWarehouseTask {
 				response = acccessor_.getClient().prepareIndex(conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_TASKS_NAME) /*ElasticWarehouseConf.defaultTasksIndexName_*/, 
 						conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_TASKS_TYPE) /*ElasticWarehouseConf.defaultTasksTypeName_*/, id)
 				        .setSource( getJsonSourceBuilder() )
+				        .setRefresh(true)
 				        .execute()
 				        .actionGet();
 			}
@@ -185,7 +211,7 @@ public abstract class ElasticWarehouseTask {
 			
 			taskId_ = id;
 			
-			acccessor_.getClient().admin().indices().prepareRefresh().execute().actionGet();
+			//replaced by .setRefresh(true) acccessor_.getClient().admin().indices().prepareRefresh().execute().actionGet();
 			
 		} catch (ElasticsearchException e) {
 			EWLogger.logerror(e);

@@ -48,6 +48,7 @@ import javax.imageio.ImageIO;
 import org.apache.log4j.Logger;
 import org.apache.tika.io.IOUtils;
 import org.apache.tika.metadata.Metadata;
+import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentBuilderString;
 import org.elasticwarehouse.core.ElasticWarehouseConf;
@@ -90,6 +91,9 @@ public class ElasticWarehouseFile {
 	}
 
 	private void postProcessTargetFolder() {
+		if( targetfolder_ == null )
+			return;
+		
 		//folder must ends with / to use prefixquery correctly
 		while( targetfolder_.endsWith("/") && targetfolder_.equals("/") == false )
 			targetfolder_ = targetfolder_.substring(0, targetfolder_.length()-1);
@@ -134,6 +138,9 @@ public class ElasticWarehouseFile {
 	private String originPath_ = "";
 	private String originFilename_ = "";
 
+	public String customkeywords_ = "";
+	public String customcomments_ = "";
+
 	//private Date thumbdate_ = null;
 	
 	public String getUploadedFilename() {
@@ -175,7 +182,7 @@ public class ElasticWarehouseFile {
 			if( ret[i].endsWith("/") == false && ret[i].equals("/") == false )
 				ret[i]+="/";
 		}
-		LOGGER.info("Generated folders: " + Arrays.asList(ret) );
+		LOGGER.debug("Generated folders: " + Arrays.asList(ret) );
 		return ret;
 	}
 	
@@ -218,6 +225,18 @@ public class ElasticWarehouseFile {
 		return parsingTime_;
 	}
 
+	public XContentBuilder getJsonBinaryDataUploadBuilder() throws IOException {
+		XContentBuilder builder = jsonBuilder();
+		boolean storeContent = conf_.getWarehouseBoolValue(ElasticWarehouseConf.STORECONTENT, true);
+		if( storeContent )
+		{
+			builder.startObject();
+			builder.field("filecontent",binaryContent_);
+		}
+		builder.endObject();
+		return builder;
+	}
+	
 	public XContentBuilder getJsonSourceBuilder() throws IOException {
 		Date today = Calendar.getInstance().getTime(); 
 		MetaInfoCollection metacopy = metadata_.getCopy();
@@ -230,12 +249,16 @@ public class ElasticWarehouseFile {
 	             .field("filename", fname_)
 	             .field("filenamena", (fname_==null?fname_:fname_.toLowerCase()) )
 	             .field("filesize", fsize_)
-				 .field("filetext", filetext);
-		boolean storeContent = conf_.getWarehouseBoolValue(ElasticWarehouseConf.STORECONTENT, true);
-		if( storeContent )
-		{
-			builder.field("filecontent",binaryContent_);
-		}
+				 .field("filetext", filetext)
+				 .field("customkeywords", customkeywords_)
+				 .field("customcomments", customcomments_);
+		
+		//starting from version 1.2.1 we don't want to have filecontent in the same index as metadata
+		//boolean storeContent = conf_.getWarehouseBoolValue(ElasticWarehouseConf.STORECONTENT, true);
+		//if( storeContent )
+		//{
+		//	builder.field("filecontent",binaryContent_);
+		//}
 		String value = "";
 		
 		value = metacopy.getStringValueFor(ElasticWarehouseTikaMapper.FILETITLE, true);
@@ -460,4 +483,11 @@ public class ElasticWarehouseFile {
 	public void originSetFilename(String originfilename) {
 		originFilename_  = originfilename;
 	}
+
+	public void setTargetFolder(String currentfolder) {
+		targetfolder_ = currentfolder;
+		postProcessTargetFolder();
+	}
+
+	
 }

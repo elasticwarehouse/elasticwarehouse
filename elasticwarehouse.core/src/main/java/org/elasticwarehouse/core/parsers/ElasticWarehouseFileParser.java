@@ -48,7 +48,8 @@ public abstract class ElasticWarehouseFileParser
 		file = new ElasticWarehouseFile(uploadedfilename, fname, targetfolder, conf);
 	}
 	
-	public IndexingResponse indexParsedFile(ElasticSearchAccessor tmpAccessor, String id, long tt, String source, String originpath, String originfilename)
+	public IndexingResponse indexParsedFile(ElasticSearchAccessor tmpAccessor, String id, long tt, 
+			String source, String originpath, String originfilename, boolean replaceupload)
 	{
 		ElasticWarehouseFile file = getParsedObject();
 		if( id != null && id.length()>0)
@@ -61,13 +62,34 @@ public abstract class ElasticWarehouseFileParser
 					conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_STORAGE_TYPE), id)
 					.execute().actionGet();
 			String firstUploadTime = response.getSource().get("fileuploaddate").toString();
+			String currentfolder = response.getSource().get("folderna").toString();
+			String currentfilename = response.getSource().get("filenamena").toString();
+			
+			String customkeywords = "";
+			String customcomments = "";
+			if( response.getSource().get("customkeywords") != null )
+				customkeywords = response.getSource().get("customkeywords").toString();
+			if( response.getSource().get("customcomments") != null )
+				customcomments = response.getSource().get("customcomments").toString();
+			
 			file.fileuploaddate_ = firstUploadTime;
+			file.customkeywords_ = customkeywords;
+			file.customcomments_ = customcomments;
+			
+			if( file.targetfolder_ == null || file.targetfolder_.length() == 0 )
+			{
+				file.setTargetFolder(currentfolder);
+			}
+			if( file.fname_ == null || file.fname_.length() == 0 )
+			{
+				file.fname_ = currentfilename;
+			}
 		}
 		file.setStat(ElasticWarehouseFile.STAT_PARSE_TIME, tt);
 		file.originSetSource(source);
 		file.originSetPath(originpath);
 		file.originSetFilename(originfilename);
-		return tmpAccessor.indexFile(file);
+		return tmpAccessor.indexFile(file, replaceupload);
 	}
 	
 	

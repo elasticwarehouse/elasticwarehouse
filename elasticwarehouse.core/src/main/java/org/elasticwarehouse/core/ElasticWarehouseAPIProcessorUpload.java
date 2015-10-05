@@ -60,14 +60,14 @@ public class ElasticWarehouseAPIProcessorUpload {
 		
 		public boolean validateInputParams(Client esClient, OutputStream os) throws IOException
 		{
-			if( folder == null || folder.length() == 0)
+			if( (folder == null || folder.length() == 0) && (id == null || id.length() == 0) )
 			{
-				os.write(responser.errorMessage("Provided folder is not valid.", ElasticWarehouseConf.URL_GUIDE_UPLOAD));
+				os.write(responser.errorMessage("Provided folder is not valid. Folder argument is mandatory when ID is not porvided.", ElasticWarehouseConf.URL_GUIDE_UPLOAD));
 				return false;
 			}
-			if( filename == null || filename.length() == 0)
+			if( (filename == null || filename.length() == 0) && (id == null || id.length() == 0) )
 			{
-				os.write(responser.errorMessage("Provided filename is not valid.", ElasticWarehouseConf.URL_GUIDE_UPLOAD));
+				os.write(responser.errorMessage("Provided filename is not valid. Filename argument is mandatory when ID is not porvided.", ElasticWarehouseConf.URL_GUIDE_UPLOAD));
 				return false;
 			}
 			if( id != null )
@@ -145,8 +145,11 @@ public class ElasticWarehouseAPIProcessorUpload {
 			fos.write(params.bytes);
 			fos.close();
 			
-			ElasticWarehouseFolder fldr = new ElasticWarehouseFolder(params.folder,conf_);
-			elasticSearchAccessor_.indexFolder(fldr);
+			if( params.folder != null && params.folder.length()>0 )
+			{
+				ElasticWarehouseFolder fldr = new ElasticWarehouseFolder(params.folder,conf_);
+				elasticSearchAccessor_.indexFolder(fldr);
+			}
 			
 			IndexingResponse indexingreponse = elasticSearchAccessor_.uploadFile(tmpfilepath, tmpfilename , params.folder, params.id, "upload");
 			if( indexingreponse != null )

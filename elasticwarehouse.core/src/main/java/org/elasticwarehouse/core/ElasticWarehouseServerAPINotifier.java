@@ -26,6 +26,8 @@ import java.util.LinkedList;
 public class ElasticWarehouseServerAPINotifier {
 
 	public static final int API_INITIALIZED = 0;
+	
+	
 	private ArrayList<Integer> waitlist = new ArrayList<Integer>();
 	public ElasticWarehouseServerAPINotifier()
 	{

@@ -62,9 +62,10 @@ public class ElasticWarehouseAPIProcessorGraphite extends ElasticWarehouseAPIPro
 	
 	private final static Logger LOGGER = Logger.getLogger(ElasticWarehouseAPIProcessorGraphite.class.getName()); 
 	
-	public ElasticWarehouseAPIProcessorGraphite(ElasticWarehouseConf conf, ElasticSearchAccessor elasticSearchAccessor) throws MalformedObjectNameException, IntrospectionException, InstanceNotFoundException, NullPointerException, ReflectionException, IOException, ParseException
+	public ElasticWarehouseAPIProcessorGraphite(ElasticWarehouseConf conf, ElasticSearchAccessor elasticSearchAccessor, ElasticWarehouseServerMonitoringNotifier monitoringNotifier) throws MalformedObjectNameException, IntrospectionException, InstanceNotFoundException, NullPointerException, ReflectionException, IOException, ParseException, InterruptedException
 	{
 		conf_  = conf;
+		monitoringNotifier.waitFor(ElasticWarehouseServerMonitoringNotifier.API_MONITORING_INITIALIZED);
 		monitor_ = new PerformanceMonitor(conf, true);
 		esmonitor_ = MonitoringManager.createElasticSearchMonitor(conf, true, elasticSearchAccessor);
 	}

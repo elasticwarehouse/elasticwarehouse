@@ -34,12 +34,15 @@ elasticsearch.cluster: "elasticwarehouse"
 
 elasticsearch.template.storage.name: elasticwarehousestorage
 elasticsearch.template.tasks.name: elasticwarehousetasks
+elasticsearch.template.uploads.name: elasticwarehouseuploads
 
 elasticsearch.index.storage.name: elasticwarehousestorage
 elasticsearch.index.storage.type: files
 elasticsearch.index.storage.childtype: childfiles
 elasticsearch.index.tasks.name: elasticwarehousetasks
 elasticsearch.index.tasks.type: tasks
+elasticsearch.index.uploads.name: elasticwarehouseuploads
+elasticsearch.index.uploads.type: uploads
 
 ######################## Settings for Embedded Mode ###########################
 # to change ElasticSearch configuration please modify elasticsearch.yml file

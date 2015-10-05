@@ -56,12 +56,14 @@ public class ElasticWarehouseAPIProcessorGetHelper
 	public GetProcessorFileData getFileBytes(String id, String type)throws IOException
 	{
 		GetProcessorFileData ret = new GetProcessorFileData();
-		GetResponse response = esClient_.prepareGet(conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_STORAGE_NAME), conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_STORAGE_TYPE), id)
+		GetResponse metaresponse = esClient_.prepareGet(conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_STORAGE_NAME), conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_STORAGE_TYPE), id)
 				.execute().actionGet();
-			if( response.isExists() )
+		GetResponse binresponse = esClient_.prepareGet(conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_UPLOADS_NAME), conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_UPLOADS_TYPE), id)
+				.execute().actionGet();
+			if( metaresponse.isExists() )
 			{
 				ret.exists_ = true;
-				Map<String, Object> source = response.getSource();
+				Map<String, Object> source = metaresponse.getSource();
 				if(source.get("isfolder") != null && Boolean.parseBoolean( source.get("isfolder").toString() ) == true )
 				{
 					//os.write(responser.errorMessage("Provided id is a folder. Please provide file id.", ElasticWarehouseConf.URL_GUIDE_GET));
@@ -88,9 +90,14 @@ public class ElasticWarehouseAPIProcessorGetHelper
 							if( source.get(ElasticWarehouseConf.FIELD_THUMB_SAMEASIMAGE) != null )
 							{
 								if( Boolean.parseBoolean( source.get(ElasticWarehouseConf.FIELD_THUMB_SAMEASIMAGE).toString() ) == true )
-									filecontent = source.get("filecontent");
-								else
+								{
+									if( binresponse.isExists() )	//check inside 'uploads' type 
+										filecontent = binresponse.getSource().get("filecontent");
+									else
+										filecontent = source.get("filecontent");
+								}else{
 									filecontent = source.get(ElasticWarehouseConf.FIELD_THUMB_THUMB);
+								}
 							}
 						//}
 						
@@ -113,7 +120,11 @@ public class ElasticWarehouseAPIProcessorGetHelper
 						filecontent = source.get("filecontent");
 					
 						//String filepath = "";
-						if( filecontent == null )
+						if( binresponse.isExists() )	//check inside 'uploads' type 
+						{
+							filecontent = binresponse.getSource().get("filecontent");
+						}
+						if( filecontent == null )	//check on external filesystem
 						{
 							byte[] data = null;
 							

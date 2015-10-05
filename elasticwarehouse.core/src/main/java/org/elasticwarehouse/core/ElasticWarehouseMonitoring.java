@@ -46,16 +46,19 @@ import org.elasticwarehouse.core.graphite.PerformanceMonitor;
 
 public class ElasticWarehouseMonitoring
 {
-	private final static Logger LOGGER = Logger.getLogger(ElasticWarehouseMonitoring.class.getName()); 
+	private final static Logger LOGGER = Logger.getLogger(ElasticWarehouseMonitoring.class.getName());
+	private ElasticWarehouseServerMonitoringNotifier monitoringNotifier_; 
 	
 	
-	public void startMonitor(ElasticWarehouseConf conf, ElasticSearchAccessor elasticSearchAccessor)
+	public void startMonitor(ElasticWarehouseConf conf, ElasticSearchAccessor elasticSearchAccessor, ElasticWarehouseServerMonitoringNotifier monitoringNotifier)
 	{
+		monitoringNotifier_ = monitoringNotifier;
 		PerformanceMonitor monitor = null;
 		ElasticSearchMonitor esmonitor = null;
 		try {
 			monitor = new PerformanceMonitor(conf, false);
 			esmonitor = MonitoringManager.createElasticSearchMonitor(conf, false, elasticSearchAccessor);
+			monitoringNotifier_.notifyListeners(ElasticWarehouseServerMonitoringNotifier.API_MONITORING_INITIALIZED);
 		} catch (MalformedObjectNameException e1) {
 			EWLogger.logerror(e1);
 			e1.printStackTrace();
@@ -171,7 +174,10 @@ public class ElasticWarehouseMonitoring
 					{
 						LinkedList<AtrrValue> attval = new LinkedList<AtrrValue>();
 						esmonitor.fetchCustomPerformanceCounters(estype, attval);
-						esmonitor.saveCustomPerformanceCounter(estype, attval);
+						if( esmonitor.IsPerformanceCounterExist(estype) )
+							esmonitor.saveCustomPerformanceCounter(estype, attval);
+						else
+							LOGGER.debug("Found file for: " +estype+", but performance counters are not available.");
 					}
 				} catch (NullPointerException e) {
 					LOGGER.error(e.getMessage());
@@ -193,8 +199,9 @@ public class ElasticWarehouseMonitoring
 			
 				
 				LOGGER.info("Performance collector stopped : " + ((System.currentTimeMillis()-t1)/1000.0) + " s.");
-				
-				Thread.sleep(1000*60);	//wait 1 minute
+				Thread.sleep(1000*10);	//wait 10 seconds
+				monitoringNotifier_.notifyListeners(ElasticWarehouseServerMonitoringNotifier.API_MONITORING_INITIALIZED);
+				Thread.sleep(1000*50);	//wait 50 seconds
 				//Thread.sleep(5000);
 				
 			} catch (InterruptedException e) {

@@ -27,7 +27,11 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -67,6 +71,7 @@ import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.deletebyquery.DeleteByQueryResponse;
+import org.elasticsearch.action.get.GetRequestBuilder;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchRequestBuilder;
@@ -113,15 +118,19 @@ public class ElasticSearchAccessor
 	private Node node_ = null;
 	private String myNodeName_ = "";
 	
-	private final static Logger LOGGER = Logger.getLogger(ElasticSearchAccessor.class.getName()); 
+	private final static Logger LOGGER = Logger.getLogger(ElasticSearchAccessor.class.getName());
+	private static final int SIZE_NO_LIMIT = 9999999; 
 	
 	private String hostPort_ = "";
 	private ElasticWarehouseConf conf_ = null;
 	private boolean embedded_ = true;
 	
+	DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+	
 	public ElasticSearchAccessor(ElasticWarehouseConf conf, boolean openConnections)
 	{
 		conf_  = conf;
+		embedded_ = conf_.getWarehouseBoolValue(ElasticWarehouseConf.MODEEMBEDDED, true);
 		if( openConnections )
 		{
 			if( embedded_ )
@@ -243,8 +252,9 @@ public class ElasticSearchAccessor
 	
 	private synchronized boolean applyTemplates() {
 		boolean ret = false;
-		ret = applyTemplate("/res/template_mapping.json", conf_.getWarehouseValue(ElasticWarehouseConf.ES_TEMPLATE_STORAGE_NAME) /*ElasticWarehouseConf.defaultTemplateName_*/);
-		ret = applyTemplate("/res/template_mapping_tasks.json", conf_.getWarehouseValue(ElasticWarehouseConf.ES_TEMPLATE_TASKS_NAME) /*ElasticWarehouseConf.defaultTemplateTasksName_*/);
+		ret = applyTemplate("/res/template_mapping.json", conf_.getWarehouseValue(ElasticWarehouseConf.ES_TEMPLATE_STORAGE_NAME) );
+		ret = applyTemplate("/res/template_mapping_tasks.json", conf_.getWarehouseValue(ElasticWarehouseConf.ES_TEMPLATE_TASKS_NAME) );
+		ret = applyTemplate("/res/template_mapping_uploads.json", conf_.getWarehouseValue(ElasticWarehouseConf.ES_TEMPLATE_UPLOADS_NAME) );
         return ret;
 	}
 	
@@ -368,14 +378,14 @@ public class ElasticSearchAccessor
 		String[] fldrs = fldr.splitFolders();
 		for(String fldrname : fldrs)
 		{
-			if( folderExists(fldrname) )
+			if( folderExists(fldrname, true) )
 			{
 				LOGGER.info("mkdir: " + fldrname + " already exists, skipping");
 			}
 			else
 			{
 				try {
-					ret.add( indexFile(new ElasticWarehouseFolder(fldrname, conf_)) );
+					ret.add( indexFile(new ElasticWarehouseFolder(fldrname, conf_), false) );
 					LOGGER.info("mkdir: " + fldrname + " created");
 				} catch (IOException e) {
 					EWLogger.logerror(e);
@@ -385,21 +395,20 @@ public class ElasticSearchAccessor
 		}
 		return ret;
 	}
-	public synchronized IndexingResponse indexFile(ElasticWarehouseFile file)
+	public synchronized IndexingResponse indexFile(ElasticWarehouseFile file, boolean replaceupload)
 	{
 		String id = null;
 		String errormsg = "";
 		IndexResponse response = null;
 		try {
-			
-			
-			if( file.getId() == null )
+				
+			if( file.getId() == null )	//new file
 				response = client_.prepareIndex(conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_STORAGE_NAME) /*ElasticWarehouseConf.defaultIndexName_*/, 
 						conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_STORAGE_TYPE) /*ElasticWarehouseConf.defaultTypeName_*/)
 			        .setSource( file.getJsonSourceBuilder() )
 			        .execute()
 			        .actionGet();
-			else
+			else	//new version upload
 				response = client_.prepareIndex(conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_STORAGE_NAME) /*ElasticWarehouseConf.defaultIndexName_*/, 
 						conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_STORAGE_TYPE)/*ElasticWarehouseConf.defaultTypeName_*/, file.getId() )
 		        .setSource( file.getJsonSourceBuilder() )
@@ -413,9 +422,8 @@ public class ElasticSearchAccessor
 			LOGGER.info("Indexed: " + _index + "/" + _type + "/" + _id + " at version:" + _version);
 			id = _id;
 			
+			//--------- manage children
 			deleteChildren(id);
-			
-			
 			LinkedList<ElasticWarehouseFile> embeddedfiles = file.getEmbeddedFiles();
 			for(ElasticWarehouseFile embfile : embeddedfiles)
 			{
@@ -423,6 +431,7 @@ public class ElasticSearchAccessor
 				indexChildFile(embfile);
 			}
 			
+			//--------- manage binary upload
 			boolean storeContent = conf_.getWarehouseBoolValue(ElasticWarehouseConf.STORECONTENT, true);
 			if( storeContent == false )
 			{
@@ -443,7 +452,27 @@ public class ElasticSearchAccessor
 		     		EWLogger.logerror(e);
 		     		e.printStackTrace();
 		     	}
+			}else{
+				if( replaceupload )
+				{
+					//upload binary data to index defined by 'elasticsearch.index.uploads.name'
+					IndexResponse uploadresponse = client_.prepareIndex(conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_UPLOADS_NAME) , 
+							conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_UPLOADS_TYPE), id )
+			        .setSource( file.getJsonBinaryDataUploadBuilder() )
+			        .execute()
+			        .actionGet();
+					
+					String __index = response.getIndex();
+					String __type = response.getType();
+					String __id = response.getId();
+					long __version = response.getVersion();
+					LOGGER.info("Indexed binary content: " + __index + "/" + __type + "/" + __id + " at version:" + __version);
+				}else{
+					LOGGER.info("Not indexing binary content for : " + id);
+				}
 			}
+			
+			client_.admin().indices().prepareRefresh().execute().actionGet();
 			
 			
 		} catch (ElasticsearchException e) {
@@ -464,13 +493,31 @@ public class ElasticSearchAccessor
 		SearchResponse searchResponse = client_.prepareSearch( conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_STORAGE_NAME) /*ElasticWarehouseConf.defaultIndexName_*/)
 				.setTypes(conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_STORAGE_CHILDTYPE) /*ElasticWarehouseConf.defaultChildsTypeName_*/)
 		        .setQuery(termQuery("parentId", id))
-		        .setSize(9999999)
+		        .setSize(SIZE_NO_LIMIT)
 		        .execute()
 		        .actionGet();
 		for (SearchHit hit : searchResponse.getHits()) 
 	    {
 	    	String childid = hit.getId();
 	    	ret.add(childid);
+		}
+		return ret;
+	}
+	public LinkedList<String> findAllSubFilesAndFolders(String folderPrefix)
+	{
+		String folder = ResourceTools.preprocessFolderName(folderPrefix);
+		LinkedList<String> ret = new LinkedList<String>();
+		SearchResponse searchResponse = client_.prepareSearch( conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_STORAGE_NAME) /*ElasticWarehouseConf.defaultIndexName_*/)
+				.setTypes(conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_STORAGE_CHILDTYPE),
+						conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_STORAGE_TYPE) )
+		        .setQuery(prefixQuery("folderna", folder) )
+		        .setSize(SIZE_NO_LIMIT)
+		        .execute()
+		        .actionGet();
+		for (SearchHit hit : searchResponse.getHits()) 
+	    {
+	    	String id = hit.getId();
+	    	ret.add(id);
 		}
 		return ret;
 	}
@@ -680,7 +727,7 @@ public class ElasticSearchAccessor
 	}
 	
 	
-	public boolean folderExists(String infolder)
+	public boolean folderExists(String infolder, boolean exactTerm)
 	{
 		String folder = ResourceTools.preprocessFolderName(infolder);
 		if( folder.length() == 0 )
@@ -688,11 +735,17 @@ public class ElasticSearchAccessor
 		
 		SearchRequestBuilder seaerchreqbuilder = client_.prepareSearch(conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_STORAGE_NAME) /*ElasticWarehouseConf.defaultIndexName_*/)
 				.setTypes(conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_STORAGE_TYPE) /*ElasticWarehouseConf.defaultTypeName_*/)
-		        .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
-				.setQuery(
+		        .setSearchType(SearchType.DFS_QUERY_THEN_FETCH);
+		if( exactTerm )
+			seaerchreqbuilder.setQuery(
 	        		QueryBuilders.boolQuery()
     					.must(QueryBuilders.termQuery("isfolder", true) )
-    					//.must(QueryBuilders.termQuery("folder", folder) 
+    					.must(QueryBuilders.termQuery("folderna", folder) )
+				);
+		else
+			seaerchreqbuilder.setQuery(
+	        		QueryBuilders.boolQuery()
+    					.must(QueryBuilders.termQuery("isfolder", true) )
     					.must(QueryBuilders.prefixQuery("folderna", folder) )
 				);
 		seaerchreqbuilder.setSize(1);
@@ -726,6 +779,9 @@ public class ElasticSearchAccessor
 			        			)
 			        .execute()
 			        .actionGet();
+				
+				client_.admin().indices().prepareRefresh().execute().actionGet();
+				
 				return true;
 			}else{
 				return false;
@@ -770,6 +826,8 @@ public class ElasticSearchAccessor
 			        .actionGet();
 		}
 		
+		client_.admin().indices().prepareRefresh().execute().actionGet();
+		
 		return true;
 	}
 
@@ -799,6 +857,7 @@ public class ElasticSearchAccessor
 		return ret;
 	}
 	
+	//call this method only when source contains file contents ( source=upload or source=scan )
 	public IndexingResponse uploadFile(String path, String file, String targetfolder, String id /*nullable*/, String source)
 	{
 		IndexingResponse ret = null;
@@ -808,7 +867,7 @@ public class ElasticSearchAccessor
 			if( parser.parse() )
 			{
 				long tt = System.currentTimeMillis() - dwStart;
-				ret = parser.indexParsedFile(this, id/*, atid.toString()*/, tt, source, path, file);
+				ret = parser.indexParsedFile(this, id/*, atid.toString()*/, tt, source, path, file, true);
 				/*byte[] bytes = tmpAccessor.fetchFile(id.toString());
 				FileOutputStream fos = new FileOutputStream(path+"/copy"+file);
 				fos.write(bytes);
@@ -993,6 +1052,103 @@ public class ElasticSearchAccessor
 		}
 		return ret;
 	}
+
+
+
+	public EwInfoTuple getFileInfoById(String id, boolean showrequest, boolean includechildren) {
+		EwInfoTuple ei = new EwInfoTuple();
+		GetRequestBuilder getreqbuilder = client_.prepareGet(conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_STORAGE_NAME), 
+				conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_STORAGE_TYPE), id);
+		
+		if( showrequest )
+			System.out.println(getreqbuilder.toString());
+		
+		GetResponse response = getreqbuilder.execute().actionGet();
+		if( response.isExists() == false && includechildren )
+		{
+			getreqbuilder = client_.prepareGet(conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_STORAGE_NAME), 
+					conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_STORAGE_CHILDTYPE), id);
+			if( showrequest )
+				System.out.println(getreqbuilder.toString());
+			response = getreqbuilder.execute().actionGet();
+		}
+		ei.isexists = response.isExists();
+		ei.source = response.getSourceAsMap();
+		ei.id = response.getId();
+		ei.version = response.getVersion();
+		
+		return ei;
+	}
+
+	public boolean setFolder(String id, String newFolderPath) {
+		return setFileAttribute("folder", id, newFolderPath);
+	}
+
+	public boolean setFilename(String id, String newFilename) {	
+		return setFileAttribute("filename", id, newFilename);	
+	}
+
+	public boolean setFileAttribute(String attribute, String id, String newValue)
+	{
+		boolean imchild = false;
+		GetResponse response = client_.prepareGet(
+				conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_STORAGE_NAME), 
+				conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_STORAGE_TYPE), id)
+				.execute().actionGet();
+		if( response.isExists() == false ) //then it means Id is not valid or ID belongs to child
+		{
+			imchild = true;
+			response = client_.prepareGet(
+					conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_STORAGE_NAME), 
+					conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_STORAGE_CHILDTYPE), id)
+					.execute().actionGet();
+		}
+		Map<String, Object> source = response.getSource();
+		if( attribute.startsWith("fileaccess") )
+		{
+			//don't care about user so far
+			Map<String, Object> newfileaccess = new HashMap<String, Object>();
+			newfileaccess.put("adate", newValue);
+			source.put("fileaccess", newfileaccess);
+		}
+		else
+		{
+			source.put(attribute, newValue);
+		}
+		
+		//fill other related fields
+		if( attribute.equals("filename") )
+			source.put("filenamena", newValue);
+		if( attribute.equals("folder") )
+			source.put("folderna", newValue);
+		
+		IndexResponse indexResponse = null;
+		
+		if( imchild == false )
+			indexResponse = client_.prepareIndex(
+				conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_STORAGE_NAME), 
+				conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_STORAGE_TYPE), id)
+				.setSource(source).setRefresh(true).execute().actionGet();
+		else
+			indexResponse = client_.prepareIndex(
+					conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_STORAGE_NAME), 
+					conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_STORAGE_CHILDTYPE), id)
+					.setSource(source).setRefresh(true).execute().actionGet();
+		
+		return (indexResponse.getId().length()>0);
+	}
+
+
+
+	public boolean updateLastAccessTime(String id)
+	{
+		Date today = Calendar.getInstance().getTime();
+		return setFileAttribute("fileaccess.adate", id, df.format(today) );
+	}
+
+
+
+
 
 	
 }

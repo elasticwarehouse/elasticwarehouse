@@ -35,6 +35,7 @@ import java.util.List;
 import javax.imageio.ImageIO;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
 import org.elasticwarehouse.core.EWLogger;
 
 
@@ -274,5 +275,63 @@ public class FileTools {
 	    	}
 	    	
 	    	return ret;*/
+	}
+
+	public static boolean delete(String filename) {
+		File f = new File(filename);
+		return f.delete();
+	}
+
+	public static String generateNewFilename(String filename) {
+		String ret = null;
+		File f = new File(filename);
+		String basefilename = f.getName();
+		String basefilenameWithoutExt = FilenameUtils.removeExtension(basefilename);
+		
+		//remove follwoign numbers if any
+		//basefilename = basefilename.replaceAll(".[0-9]*$", "");
+		
+		int cnt = 1;
+		while(true)
+		{
+			String path = f.getParent();
+			String ftestname = path +"/"+basefilenameWithoutExt+"."+cnt+".rrd";
+			File ftest = new File(ftestname);
+			if( ftest.exists() == false )
+			{
+				//if( cnt > 1 )
+				//{
+				ret = ftestname;
+				//}
+				break;
+			}
+			cnt++;
+		}
+		return ret;
+	}
+
+	public static String getLatestFilenameCopy(String filename) {
+		String ret = null;
+		File f = new File(filename);
+		String basefilename = f.getName();
+		String basefilenameWithoutExt = FilenameUtils.removeExtension(basefilename);
+		int cnt = 1;
+		while(true)
+		{
+			String path = f.getParent();
+			String ftestname = path +"/"+basefilenameWithoutExt+"."+cnt+".rrd";
+			File ftest = new File(ftestname);
+			if( ftest.exists() == false )
+			{
+				if( cnt > 1)
+				{
+					int cntprev = cnt -1;
+					ret = path +"/"+basefilenameWithoutExt+"."+cntprev+".rrd";
+				}
+				break;
+			}
+			cnt++;
+		}
+		return ret;
 	}
 }

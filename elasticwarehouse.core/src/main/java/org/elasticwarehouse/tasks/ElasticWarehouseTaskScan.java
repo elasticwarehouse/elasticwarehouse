@@ -121,7 +121,7 @@ public class ElasticWarehouseTaskScan extends ElasticWarehouseTask {
 				if( ret )
 					progress_ = 100;
 				else
-					errorcode_ = 10;
+					errorcode_ = ERROR_TASK_SCAN_OTHER_EXCEPTION;
 					
 				indexTask();
 		    }  
@@ -161,6 +161,9 @@ public class ElasticWarehouseTaskScan extends ElasticWarehouseTask {
 				}
 	        	//Integer atid=1;
 	        	int counter = 0;
+	        	//int modulofactor = scannedFiles_ / 5;
+	        	//if( modulofactor <10 )
+	        	//	modulofactor = 10;
 	        	
 	        	for(FileDef file : files)
 	        	{
@@ -189,7 +192,8 @@ public class ElasticWarehouseTaskScan extends ElasticWarehouseTask {
 	        		float pp = (float)counter/ss;
 	        		progress_ = (int) ((float) pp*100.0);
 	        		counter++;
-	        		indexTask();
+	        		if( (counter%20) == 0 && counter >0 )
+	        			indexTask();
 	        	}
 	        	return true;
 				

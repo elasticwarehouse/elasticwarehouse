@@ -33,12 +33,15 @@ public class ElasticWarehouseServerAPI {
 	private ElasticWarehouseTasksManager tasksManager_ = null;
 	private ElasticWarehouseConf conf_;
 	private ElasticWarehouseServerAPINotifier apiNotifier_;
+	private ElasticWarehouseServerMonitoringNotifier monitoringNotifier_;
+	
 	private final static Logger LOGGER = Logger.getLogger(ElasticWarehouseServerAPI.class.getName());
 	
-	public void startServer(ElasticWarehouseConf conf, ElasticSearchAccessor acccessor, ElasticWarehouseServerAPINotifier apiNotifier) throws IOException
+	public void startServer(ElasticWarehouseConf conf, ElasticSearchAccessor acccessor, ElasticWarehouseServerAPINotifier apiNotifier, ElasticWarehouseServerMonitoringNotifier monitoringNotifier) throws IOException
 	{
 		acccessor_ = acccessor;
 		apiNotifier_ = apiNotifier;
+		monitoringNotifier_ = monitoringNotifier;
 		conf_ = conf;
 		int PORT = conf.getWarehouseIntValue(ElasticWarehouseConf.ESAPIPORT, ElasticWarehouseConf.APIPORT);
 		Server server = null;
@@ -74,7 +77,7 @@ public class ElasticWarehouseServerAPI {
 		{
 			try {
 				server = new Server(PORT);
-				ElasticWarehouseRequestHandlerAPI apihandler = new ElasticWarehouseRequestHandlerAPI(acccessor_, conf, tasksManager_);
+				ElasticWarehouseRequestHandlerAPI apihandler = new ElasticWarehouseRequestHandlerAPI(acccessor_, conf, tasksManager_, monitoringNotifier_);
 			
 				//HandlerWrapper wrapper = new HandlerWrapper();
 				//wrapper.setHandler(apihandler);

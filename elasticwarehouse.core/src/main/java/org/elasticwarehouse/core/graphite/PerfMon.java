@@ -73,6 +73,10 @@ public abstract class PerfMon {
 			LOGGER.error("Cannot store Doubles ["+attval+ "] at " + t +" in RRD database " + type + " : " +e.getMessage());
 			EWLogger.logerror(e);
 			e.printStackTrace();
+		} catch (ParseException e) {
+			LOGGER.error("Cannot saveCounter ["+attval+ "] at " + t +" in RRD database " + type + " : " +e.getMessage());
+			EWLogger.logerror(e);
+			e.printStackTrace();
 		}
 	}
 }

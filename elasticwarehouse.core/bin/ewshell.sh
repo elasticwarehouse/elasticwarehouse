@@ -126,7 +126,12 @@ function showerror()
 	sampleusage
 	exit 1
 }
-
+function showerroronly()
+{
+	local  msg=$1
+	printf "%-100s: \e[31mERROR\e[39m\n" "$msg"
+	exit 1
+}
 checkEnv()
 {
 	command -v curl >/dev/null 2>&1 || { 
@@ -269,6 +274,10 @@ function executeinfo()
 	local TMPFILE=/tmp/ewshell$RANDOM.json
 	local TMPFILEOUTPUT=/tmp/ewshelloutput$RANDOM.json
 	curl -XGET "$HOST:$PORT/_ewinfo?id=$ID$SHOW_REQUEST" > $TMPFILE 2>/dev/null
+	local lastExitCode=$?
+	if [ $lastExitCode -ne 0 ]; then
+		showerroronly "Cannot request ElasticWarehouse cluster $HOST:$PORT"
+	fi
 	#cat $TMPFILE
 	
 	local version=`cat $TMPFILE | jq -r '.version'`
@@ -431,6 +440,10 @@ function executesearch()
 	local TMPFILE=/tmp/ewshell$RANDOM.json
 	local TMPFILESOURCES=/tmp/ewshellsource$RANDOM.json
 	curl -XGET "$HOST:$PORT/_ewsearchall?q=$Q$SHOW_REQUEST&from=$FROM$REQSIZE&$REQHIGHLIGHT&pretag=*&posttag=*&fragmentSize=50" > $TMPFILE 2>/dev/null
+	local lastExitCode=$?
+	if [ $lastExitCode -ne 0 ]; then
+		showerroronly "Cannot request ElasticWarehouse cluster $HOST:$PORT"
+	fi
 	cat $TMPFILE | jq -r '.hits.hits[]._source' > $TMPFILESOURCES
 	local versions=( $(cat $TMPFILE | jq -r '.hits.hits[]._version') )
 	local ids=( $(cat $TMPFILE | jq -r '.hits.hits[]._id') )
@@ -497,10 +510,15 @@ function executebrowse()
 	local TMPFILE=/tmp/ewshell$RANDOM.json
 	local TMPFILESOURCES=/tmp/ewshellsource$RANDOM.json
 	curl -XGET "$HOST:$PORT/_ewbrowse?$2$SHOW_REQUEST&from=$FROM$REQSIZE" > $TMPFILE 2>/dev/null
+	local lastExitCode=$?
+	if [ $lastExitCode -ne 0 ]; then
+		showerroronly "Cannot request ElasticWarehouse cluster $HOST:$PORT"
+	fi
 	cat $TMPFILE | jq -r '.hits.hits[]._source' > $TMPFILESOURCES
 	local versions=( $(cat $TMPFILE | jq -r '.hits.hits[]._version') )
 	local ids=( $(cat $TMPFILE | jq -r '.hits.hits[]._id') )
-	showbrowsesearchresults $TMPFILESOURCES $FROM versions ids
+	local highlights=(  )
+	showbrowsesearchresults $TMPFILESOURCES $FROM versions ids highlights
 	rm $TMPFILE
 	rm $TMPFILESOURCES
 	

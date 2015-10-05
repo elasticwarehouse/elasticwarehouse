@@ -80,7 +80,7 @@ public class ElasticWarehouseTaskDelete extends ElasticWarehouseTask {
 		} catch (Exception e) {
 			EWLogger.logerror(e);
 			e.printStackTrace();
-			errorcode_ = 50;
+			errorcode_ = ERROR_TASK_DELETE_OTHER_EXCEPTION;
 			comment_ = "Error:" + e.getMessage();
 		}
 		

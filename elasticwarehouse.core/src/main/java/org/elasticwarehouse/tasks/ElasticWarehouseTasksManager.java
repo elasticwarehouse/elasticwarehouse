@@ -35,6 +35,7 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.unit.TimeValue;
+import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.sort.SortBuilder;
@@ -65,8 +66,7 @@ public class ElasticWarehouseTasksManager {
 		boolean ret = markNotFinishedTasksAsCancelled();
 		LOGGER.info("Marking old tasks as cancelled: "+ret);
 	}
-
-	public LinkedList<String> getTasks(Boolean finished, String hostname, int size, int from)
+	public LinkedList<String> getTasks(Boolean finished, String nodename, int size, int from, boolean showrequest, boolean allnodes, String correspondingFileId)
 	{
 		LinkedList<String> ret = new LinkedList<String>();
 		SearchRequestBuilder seaerchreqbuilder = acccessor_.getClient().prepareSearch(conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_TASKS_NAME) /*ElasticWarehouseConf.defaultTasksIndexName_*/)
@@ -75,23 +75,24 @@ public class ElasticWarehouseTasksManager {
 		        .setSearchType(SearchType.DFS_QUERY_THEN_FETCH);
 		        //.setScroll(new TimeValue(60000));
 		
+		BoolQueryBuilder bqbuilder = QueryBuilders.boolQuery();
 		if( finished != null )
-		{
-			seaerchreqbuilder.setQuery(
-		        		QueryBuilders.boolQuery()
-        					.must(QueryBuilders.termQuery("finished", finished) )
-        					.must(QueryBuilders.termQuery("host", hostname) )
-    				);
-		}else{
-			seaerchreqbuilder.setQuery(
-	        		QueryBuilders.boolQuery()
-    					.must(QueryBuilders.termQuery("host", hostname) )
-				);
-		}
+			bqbuilder.must(QueryBuilders.termQuery("finished", finished) );
+		
+		if( allnodes == false )
+			bqbuilder.must(QueryBuilders.termQuery("node", nodename) );
+
+		if( correspondingFileId != null && correspondingFileId.length()>0 )
+			bqbuilder.must(QueryBuilders.termQuery("fileid", correspondingFileId));
+		
+		seaerchreqbuilder.setQuery(bqbuilder);
 		seaerchreqbuilder.setSize(size);
 		seaerchreqbuilder.setFrom(from);
 		seaerchreqbuilder.addSort(SortBuilders.fieldSort("submitdate").order(SortOrder.DESC).ignoreUnmapped(true));
-		//System.out.println(seaerchreqbuilder.toString());
+		
+		if( showrequest )
+			System.out.println(seaerchreqbuilder.toString());
+		
 		SearchResponse scrollResp = seaerchreqbuilder.execute().actionGet();
 		
 		while (true) 
@@ -105,7 +106,8 @@ public class ElasticWarehouseTasksManager {
 		    		continue;
 		    	
 		    	String taskid = hit.getSource().get("taskid").toString();
-		    	ret.add(taskid);
+		    	if( taskid.length() > 0 )
+		    		ret.add(taskid);
 			}
 		    
 		    //Break condition: No hits are returned
@@ -115,12 +117,16 @@ public class ElasticWarehouseTasksManager {
 		    //}
 		}
 		
-		return ret;
+		return ret;		
+	}
+	public LinkedList<String> getTasks(Boolean finished, String nodename, int size, int from, boolean showrequest, boolean allnodes)
+	{
+		return getTasks(finished, nodename, size, from, showrequest, allnodes, null);
 	}
 	
 	public boolean markNotFinishedTasksAsCancelled()
 	{
-		LinkedList<String> tasks = getTasks(false, conf_.getNodeName() /* NetworkTools.getHostName()*/, 1000, 0);
+		LinkedList<String> tasks = getTasks(false, conf_.getNodeName() /* NetworkTools.getHostName()*/, 1000, 0, false, false);
 		for(String taskId : tasks)
 		{
 			ElasticWarehouseTask task = getTask(taskId);
@@ -133,7 +139,7 @@ public class ElasticWarehouseTasksManager {
 	}
 	private void checkCurrentlyRunningTasks() throws IOException
 	{
-		LinkedList<String> tasks = getTasks(false, conf_.getNodeName() /*NetworkTools.getHostName()*/, 1000, 0);
+		LinkedList<String> tasks = getTasks(false, conf_.getNodeName() /*NetworkTools.getHostName()*/, 1000, 0, false, false);
 		int cnt = tasks.size();
 		for(String tskid : tasks)
 		{
@@ -212,6 +218,8 @@ public class ElasticWarehouseTasksManager {
 			return new ElasticWarehouseTaskMkdir(acccessor_, conf_, source);
 		else if( source.get("action").equals("rmdir") )
 			return new ElasticWarehouseTaskRmdir(acccessor_, conf_, source);
+		else if( source.get("action").equals("rename") )
+			return new ElasticWarehouseTaskRename(acccessor_, conf_, source);
 		else if( source.get("action").equals("move") )
 			return new ElasticWarehouseTaskMove(acccessor_, conf_, source);
 		else if( source.get("action").equals("delete") )
@@ -256,7 +264,17 @@ public class ElasticWarehouseTasksManager {
 		//runningTasks_.add(task);
 		return task;
 	}
-
+	public ElasticWarehouseTask rename(String id, String targetname)throws IOException
+	{
+		checkCurrentlyRunningTasks();
+		
+		ElasticWarehouseTaskRename task = new ElasticWarehouseTaskRename(acccessor_, conf_, id, targetname);
+		task.start();		
+		String taskId = task.indexTask();
+		runningTasks_.add(task);
+		return task;
+	}
+	
 	public ElasticWarehouseTask cancelTask(String id)
 	{
 		ElasticWarehouseTask task = null;
@@ -286,6 +304,8 @@ public class ElasticWarehouseTasksManager {
 		}
 		return ret;
 	}
+
+
 
 	
 	

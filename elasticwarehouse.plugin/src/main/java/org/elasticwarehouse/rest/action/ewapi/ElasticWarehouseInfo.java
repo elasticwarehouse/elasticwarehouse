@@ -34,6 +34,7 @@ import org.elasticsearch.rest.RestController;
 import org.elasticsearch.rest.RestRequest;
 import org.elasticwarehouse.core.ElasticWarehouseAPIProcessorInfo;
 import org.elasticwarehouse.core.ElasticWarehouseAPIProcessorInfo.ElasticWarehouseAPIProcessorInfoParams;
+import org.elasticwarehouse.tasks.ElasticWarehouseTasksManager;
 
 
 public class ElasticWarehouseInfo extends ElasticWarehouseRestHandler {
@@ -43,6 +44,7 @@ public class ElasticWarehouseInfo extends ElasticWarehouseRestHandler {
 	protected Client client_;
 	
 	private ElasticWarehouseAPIProcessorInfo processor_;
+	private ElasticWarehouseTasksManager tasksManager_;
 	
     @Inject public ElasticWarehouseInfo(Settings settings, Client client, RestController controller) {
         super(settings, controller, client);
@@ -55,9 +57,9 @@ public class ElasticWarehouseInfo extends ElasticWarehouseRestHandler {
         //controller.registerHandler(GET, "/{index}/_ewsearchall", this);
         //controller.registerHandler(GET, "/{index}/{type}/_myrestpoint", this);
         //controller.registerHandler(POST, "/{index}/{type}/_myrestpoint", this);
+        tasksManager_ = new ElasticWarehouseTasksManager(elasticSearchAccessor_, conf_);
         
-        
-        processor_ = new ElasticWarehouseAPIProcessorInfo(conf_, elasticSearchAccessor_);
+        processor_ = new ElasticWarehouseAPIProcessorInfo(conf_, elasticSearchAccessor_, tasksManager_);
     }
 
     public void handleRequest(final RestRequest orgrequest, final RestChannel channel, final Client client)

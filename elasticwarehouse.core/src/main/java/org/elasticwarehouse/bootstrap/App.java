@@ -29,19 +29,13 @@ import org.elasticsearch.monitor.jvm.JvmInfo;
 import org.elasticwarehouse.core.EWLogger;
 import org.elasticwarehouse.core.ElasticWarehouseConf;
 
-//TODO known issues: On Windows boxes extenbale database elasticsearch.rrd sometimtiems is beeing locked when new datasourcesa are comming. it is caouseing following:
-/*Got java.nio.file.FileSystemException, waiting....c:\opt\elasticwarehouse\data\perf\localhost\elasticsearch.rrd: The process cannot access the file because it is being used by
-another process.
-[2015-08-18 18:17:04,228]  INFO [Thread-3] - Performance collector started...
-[2015-08-18 18:17:04,260]  INFO [Thread-3] - Adding: ewindex_ins_avgrate in c:\opt\elasticwarehouse/data//perf/4jxtyw1-tpl-a//elasticsearch.rrd
-[2015-08-18 18:17:04,261]  INFO [Thread-3] - Adding: ewindex_ins_avgrate in c:\opt\elasticwarehouse/data//perf/4jxtyw1-tpl-a//elasticsearch.rrd
-[2015-08-18 18:17:04,339]  INFO [Thread-3] - Closing RRD....
-[2015-08-18 18:17:04,339]  INFO [Thread-3] - Closed RRD
-in such case node restart is needed
-Posisble bug in rrd4j jar when extending more than one datasource at once by RrdToolkit.addDatasources or RrdDb::close() not always work as expected on Windows
-*/
+//TODO future: private files (per user)
+//TODO future: folder/files locking feature. Use it for folders renaming (i.e. lock every file/folder, then perform folder rename operation) 
+//TODO future: log details about file changes (when version increases) + copy file in case of new upload
 //TODO future: moving folders (_ewtask?action=move)
-
+//TODO future: resume tasks interrupted due to EW crash etc.
+//TODO future: optimize rename task (increase performance)
+//TODO future: notify graphite RRD files reader (PerformanceMonitor instance) about new RRD file created in result of expandRRDFile() method call 
 //TODO future community: ewshell show MB bytes not bytes only (human readable switch)
 //TODO future community: ewshell show stats (query, tt, parsing)
 

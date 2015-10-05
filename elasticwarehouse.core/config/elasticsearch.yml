@@ -324,7 +324,7 @@ cluster.name: elasticwarehouse
 #    to perform discovery when new nodes (master or data) are started:
 #
 #discovery.zen.ping.unicast.hosts: ["host1", "host2:port"]
-discovery.zen.ping.unicast.hosts: ["localhost"]
+#discovery.zen.ping.unicast.hosts: ["localhost"]
 
 # EC2 discovery allows to use AWS EC2 API in order to perform discovery.
 #

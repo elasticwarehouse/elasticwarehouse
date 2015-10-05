@@ -268,7 +268,8 @@ public class ElasticWarehouseSearchRequest extends ElasticWarehouseReqRespHelper
 				for (int i = 0; i < arrfields.length(); i++)
 				{
 					String fieldName = arrfields.getString(i);
-					if( /*fieldName.equals(ElasticWarehouseMapping.FIELDALL) == false &&*/ ElasticWarehouseMapping.availableFields.contains(fieldName) == false )
+					if( /*fieldName.equals(ElasticWarehouseMapping.FIELDALL) == false &&*/ 
+							ElasticWarehouseMapping.availableFields.contains(fieldName) == false )
 					{
 						os.write(helper.errorMessage("Field " + fieldName + " is not valid field name", ElasticWarehouseConf.URL_GUIDE_SEARCH));
 						return null;
@@ -304,25 +305,33 @@ public class ElasticWarehouseSearchRequest extends ElasticWarehouseReqRespHelper
 		         queryfields.put(key, value);
 		    }
 			
+			//using folder+location+all
 			int minimum_should_match = 0;
-			//if( queryfields.containsKey(ElasticWarehouseMapping.FIELDALL) && queryfields.containsKey(ElasticWarehouseMapping.FIELDFOLDER) == false && queryfields.size()>1)
-			if( queryfields.size() == 2 &&
+			if( 	queryfields.size() == 3 &&
+					queryfields.containsKey(ElasticWarehouseMapping.FIELDALL) && 
+				( 	queryfields.containsKey(ElasticWarehouseMapping.FIELDFOLDER) || queryfields.containsKey(ElasticWarehouseMapping.FIELDFOLDERNA) ) &&
+					queryfields.containsKey(ElasticWarehouseMapping.FIELDLOCATION) 
+			){
+				//fine
+				minimum_should_match = 1;
+			}
+			//using folder+all
+			else if( queryfields.size() == 2 &&
 				queryfields.containsKey(ElasticWarehouseMapping.FIELDALL) && 
 				( queryfields.containsKey(ElasticWarehouseMapping.FIELDFOLDER) || queryfields.containsKey(ElasticWarehouseMapping.FIELDFOLDERNA) ) 
-				)
-			{
+			){
 				//fine
 				minimum_should_match = 1;
 			}
 			else if( queryfields.size() == 1 && (
 					queryfields.containsKey(ElasticWarehouseMapping.FIELDALL) || 
-					queryfields.containsKey(ElasticWarehouseMapping.FIELDFOLDER) ) )
-			{
+					queryfields.containsKey(ElasticWarehouseMapping.FIELDFOLDER) ) 
+			){
 				//fine
 			}
 			else if( queryfields.size() > 2 && queryfields.containsKey(ElasticWarehouseMapping.FIELDALL) )
 			{
-				os.write(helper.errorMessage("Field 'all' cannot be combined with other field names except 'folder'", ElasticWarehouseConf.URL_GUIDE_SEARCH));
+				os.write(helper.errorMessage("Field 'all' cannot be combined with other field names except 'folder' or 'location'", ElasticWarehouseConf.URL_GUIDE_SEARCH));
 				return null;
 			}
 		
@@ -406,10 +415,15 @@ public class ElasticWarehouseSearchRequest extends ElasticWarehouseReqRespHelper
 		            		multiQuery.should(QueryBuilders.wildcardQuery("filetext", fieldvalue));
 		            		multiQuery.should(QueryBuilders.wildcardQuery("filemeta.metavaluetext", fieldvalue));
 		            		
+		            		multiQuery.should(QueryBuilders.wildcardQuery("customkeywords", fieldvalue));
+		            		multiQuery.should(QueryBuilders.wildcardQuery("customcomments", fieldvalue));
+		            		
 		            		higlightfields.add("filename");
 		            		higlightfields.add("filetitle");
 		            		higlightfields.add("filetext");
 		            		higlightfields.add("filemeta.metavaluetext");
+		            		higlightfields.add("customkeywords");
+		            		higlightfields.add("customcomments");
 		            	}
 		            	else
 		            	{
@@ -435,6 +449,8 @@ public class ElasticWarehouseSearchRequest extends ElasticWarehouseReqRespHelper
 		            		multiQuery.should(QueryBuilders.matchQuery("filetitle", fieldvalue));
 		            		multiQuery.should(QueryBuilders.matchQuery("filetext", fieldvalue));
 		            		multiQuery.should(QueryBuilders.matchQuery("filemeta.metavaluetext", fieldvalue));
+		            		multiQuery.should(QueryBuilders.matchQuery("customkeywords", fieldvalue));
+		            		multiQuery.should(QueryBuilders.matchQuery("customcomments", fieldvalue));
 		            		
 			            	//multiQuery.must(QueryBuilders.multiMatchQuery(queryfields_.get(fieldname), "filename","filetitle", "filetext", 
 							//		"filemeta.metavaluetext" /*, "filemeta.metavaluedate", "filemeta.metavaluelong"*/));
@@ -442,6 +458,8 @@ public class ElasticWarehouseSearchRequest extends ElasticWarehouseReqRespHelper
 		            		higlightfields.add("filetitle");
 		            		higlightfields.add("filetext");
 		            		higlightfields.add("filemeta.metavaluetext");
+		            		higlightfields.add("customkeywords");
+		            		higlightfields.add("customcomments");
 			            }else{
 			            	if( fieldname.equals("filename") ) {
 			            		multiQuery.must( buildMatchQuery("filename", fieldvalue) );
@@ -504,7 +522,8 @@ public class ElasticWarehouseSearchRequest extends ElasticWarehouseReqRespHelper
 		{
 	    	for(String field : higlightfields)
 	    	{
-	    		if( field.equals("filename") || field.equals("filetitle") || field.equals("filetext") || field.equals("filemeta.metavaluetext") )
+	    		if( field.equals("filename") || field.equals("filetitle") || field.equals("filetext") || field.equals("filemeta.metavaluetext") ||
+	    			field.equals("customkeywords") || field.equals("customcomments"))
 	    			request.addHighlightedField(new HighlightBuilder.Field(field).highlighterType("fvh").fragmentSize(fragmentsize_).preTags(pretag_).postTags(posttag_) );
 	    		else if ( field.equals("folderna") )
 	    			request.addHighlightedField(new HighlightBuilder.Field("folder").highlighterType("plain").fragmentSize(fragmentsize_).preTags(pretag_).postTags(posttag_) );
@@ -631,6 +650,7 @@ public class ElasticWarehouseSearchRequest extends ElasticWarehouseReqRespHelper
     	boolean useRangeTo = false;
     	try
     	{
+    		//System.out.println(fieldvalue);
     		JSONObject obj = new JSONObject( fieldvalue );
     		if( obj.has("from") )
     		{
@@ -645,7 +665,7 @@ public class ElasticWarehouseSearchRequest extends ElasticWarehouseReqRespHelper
     	}
     	catch(JSONException e)
     	{
-    		EWLogger.logerror(e);
+    		//exception is used to deterrmine json object structure, don't log it EWLogger.logerror(e);
     	}
     	if( useRangeFrom || useRangeTo )
     	{
