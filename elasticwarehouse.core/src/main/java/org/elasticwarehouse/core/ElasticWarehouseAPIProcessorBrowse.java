@@ -110,26 +110,23 @@ public class ElasticWarehouseAPIProcessorBrowse extends ElasticWarehouseAPIProce
 			//if( level == 0 )
 			//	level = 1;
 			
-			SearchRequestBuilder esreq = esClient.prepareSearch(conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_STORAGE_NAME) /*ElasticWarehouseConf.defaultIndexName_*/)
-		        .setTypes(conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_STORAGE_TYPE) /*ElasticWarehouseConf.defaultTypeName_*/)
+			SearchRequestBuilder esreq = esClient.prepareSearch(conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_STORAGE_NAME) )
+		        .setTypes(conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_STORAGE_TYPE) )
 		        .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
 		        .setFetchSource(null, new String[] {"filecontent","filetext"});
-		        //.setQuery(QueryBuilders.termQuery("_all", q))
-		        if( folder.equals("/") )
-		        	esreq.setQuery(
-						        			QueryBuilders.termQuery("folderlevel", level)
-						        			);
-	        	else
-		        	esreq.setQuery(
-		        		QueryBuilders.boolQuery()
-		        			.must( QueryBuilders.matchQuery("folderna", folder).type(Type.PHRASE_PREFIX) )	//uzylem pola folderna zeby w przypadku dwoch folderow /home/zuko oraz /home/zuko2 i wyszukiwania /home/zuko nie pokzwywal zawartosci /home/zuko2
-		        			.must( QueryBuilders.termQuery("folderlevel", level) )
-		        			);
+	        if( folder.equals("/") )
+	        	esreq.setQuery( QueryBuilders.termQuery("folderlevel", level) );
+        	else
+	        	esreq.setQuery(
+	        		QueryBuilders.boolQuery()
+	        			.must( QueryBuilders.matchQuery("folderna", folder).type(Type.PHRASE_PREFIX) )	//uzylem pola folderna zeby w przypadku dwoch folderow /home/zuko oraz /home/zuko2 i wyszukiwania /home/zuko nie pokzwywal zawartosci /home/zuko2
+	        			.must( QueryBuilders.termQuery("folderlevel", level) )
+	        			);
 		        //else, zakompnetowane gdyz moze byc wiele roznych sciezek o ttym samym levelu, a user chce wylistowac tylko jeden folder, tak wiec "folder" musi byc uzupelniony
 		        //	esreq.setQuery(
 			    //    			QueryBuilders.termQuery("folderlevel", level)
 			    //    			);
-		        esreq
+	        esreq
 		        .addSort(SortBuilders.fieldSort("isfolder").order(SortOrder.DESC).ignoreUnmapped(true))
 		        .addSort(SortBuilders.fieldSort("folderna").order(SortOrder.ASC).ignoreUnmapped(true))
 		        .addSort(SortBuilders.fieldSort("filenamena").order(SortOrder.ASC).ignoreUnmapped(true))

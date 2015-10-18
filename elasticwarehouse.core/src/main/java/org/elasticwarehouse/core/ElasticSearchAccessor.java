@@ -67,6 +67,7 @@ import org.elasticsearch.action.admin.indices.stats.IndicesStatsResponse;
 import org.elasticsearch.action.admin.indices.template.put.PutIndexTemplateRequestBuilder;
 import org.elasticsearch.action.admin.indices.template.put.PutIndexTemplateResponse;
 import org.elasticsearch.action.bulk.BulkItemResponse;
+import org.elasticsearch.action.bulk.BulkProcessor;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.delete.DeleteResponse;
@@ -78,6 +79,7 @@ import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.action.support.IndicesOptions;
+import org.elasticsearch.action.update.UpdateRequestBuilder;
 import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.Requests;
@@ -95,6 +97,7 @@ import org.elasticsearch.common.transport.TransportAddress;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.http.HttpInfo;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.query.MatchQueryBuilder.Type;
 import org.elasticsearch.index.search.MultiMatchQuery.QueryBuilder;
 import org.elasticsearch.node.Node;
 import org.elasticsearch.search.SearchHit;
@@ -428,6 +431,9 @@ public class ElasticSearchAccessor
 			for(ElasticWarehouseFile embfile : embeddedfiles)
 			{
 				embfile.setParentId(id);
+				if( embfile.targetfolder_ == null )
+					embfile.setTargetFolder(file.targetfolder_);
+
 				indexChildFile(embfile);
 			}
 			
@@ -472,7 +478,7 @@ public class ElasticSearchAccessor
 				}
 			}
 			
-			client_.admin().indices().prepareRefresh().execute().actionGet();
+			refreshIndex();
 			
 			
 		} catch (ElasticsearchException e) {
@@ -503,6 +509,30 @@ public class ElasticSearchAccessor
 		}
 		return ret;
 	}
+	public LinkedList<EwBrowseTuple> findAllSubFolders(String folderPrefix)
+	{
+		String folder = ResourceTools.preprocessFolderName(folderPrefix);
+		LinkedList<EwBrowseTuple> ret = new LinkedList<EwBrowseTuple>();
+		SearchResponse searchResponse = client_.prepareSearch( conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_STORAGE_NAME) )
+				.setTypes(conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_STORAGE_CHILDTYPE),
+						  conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_STORAGE_TYPE) )
+		        .setQuery(
+		        		QueryBuilders.boolQuery()
+    						.must(QueryBuilders.termQuery("isfolder", true) )
+    						.must(prefixQuery("folderna", folder) ) )
+		        .setSize(SIZE_NO_LIMIT)
+		        .setVersion(true)
+		        .execute()
+		        .actionGet();
+
+		for (SearchHit hit : searchResponse.getHits()) 
+	    {
+			EwBrowseTuple tuple = new EwBrowseTuple(hit);
+	    	ret.add(tuple);
+		}
+		return ret;
+	}
+	
 	public LinkedList<String> findAllSubFilesAndFolders(String folderPrefix)
 	{
 		String folder = ResourceTools.preprocessFolderName(folderPrefix);
@@ -780,7 +810,7 @@ public class ElasticSearchAccessor
 			        .execute()
 			        .actionGet();
 				
-				client_.admin().indices().prepareRefresh().execute().actionGet();
+				refreshIndex();
 				
 				return true;
 			}else{
@@ -826,7 +856,7 @@ public class ElasticSearchAccessor
 			        .actionGet();
 		}
 		
-		client_.admin().indices().prepareRefresh().execute().actionGet();
+		refreshIndex();
 		
 		return true;
 	}
@@ -858,7 +888,7 @@ public class ElasticSearchAccessor
 	}
 	
 	//call this method only when source contains file contents ( source=upload or source=scan )
-	public IndexingResponse uploadFile(String path, String file, String targetfolder, String id /*nullable*/, String source)
+	public IndexingResponse uploadFile(String path, String file, String targetfolder/*nullable*/, String id /*nullable*/, String source)
 	{
 		IndexingResponse ret = null;
 		try {
@@ -1145,6 +1175,91 @@ public class ElasticSearchAccessor
 		Date today = Calendar.getInstance().getTime();
 		return setFileAttribute("fileaccess.adate", id, df.format(today) );
 	}
+
+	public LinkedList<String> findAllFilesInFolder(String folderpath, boolean inchildtype) throws IOException
+	{
+		LinkedList<String> result = new LinkedList<String>();
+		String folder = ResourceTools.preprocessFolderName(folderpath); 
+		ElasticWarehouseFolder fldr = new ElasticWarehouseFolder(folder, conf_);
+		int level = fldr.getFolderLevel();
+		level++;
+		
+		String type = "";
+		if( inchildtype )
+			type = conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_STORAGE_CHILDTYPE);
+		else
+			type = conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_STORAGE_TYPE);
+		
+		SearchRequestBuilder esreq = client_.prepareSearch(conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_STORAGE_NAME) )
+	        .setTypes( type )
+	        .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
+	        .setFetchSource(null, new String[] {"filecontent","filetext"});
+        if( folder.equals("/") )
+        	esreq.setQuery( QueryBuilders.termQuery("folderlevel", level) );
+    	else
+        	esreq.setQuery(
+        		QueryBuilders.boolQuery()
+        			.must( QueryBuilders.matchQuery("folderna", folder).type(Type.PHRASE_PREFIX) )
+        			.must( QueryBuilders.termQuery("folderlevel", level) )
+        			);
+        esreq
+	        .setVersion(true)
+	        .setSize(SIZE_NO_LIMIT)
+	        .setNoFields();
+        
+        SearchResponse response = esreq.execute().actionGet();
+        for (SearchHit hit : response.getHits()) 
+	    {
+	    	result.add(hit.getId());
+		}
+        return result;
+	}
+
+	public void setNewFolderForFilesInFolder(String currentFolder, String newFolder,  boolean inchildtype) throws IOException
+	{
+		BulkRequestBuilder bulkRequest = client_.prepareBulk();
+		String type = "";
+		if( inchildtype )
+			type = conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_STORAGE_CHILDTYPE);
+		else
+			type = conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_STORAGE_TYPE);
+		
+		LinkedList<String> ids = findAllFilesInFolder(currentFolder, inchildtype);
+		for(String id : ids)
+		{
+			UpdateRequestBuilder updatereq = client_.prepareUpdate( 
+					conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_STORAGE_NAME), type, id)
+				.setRefresh(false)
+				.setDoc(jsonBuilder()
+	                    .startObject()
+	                        .field("folderna", newFolder)
+	                        .field("folder", newFolder)
+	                    .endObject());
+            bulkRequest.add(updatereq);				
+		}
+		
+		if( ids.size() > 0 )
+		{
+			BulkResponse bulkResponse = bulkRequest.execute().actionGet();
+			if (bulkResponse.hasFailures()) {
+				throw new ElasticsearchException("Updating folders for files inside "+currentFolder+" failed. "+bulkResponse.buildFailureMessage() );
+			}
+		}
+	}
+	
+	public void setNewFolderForFilesInFolder(String currentFolder, String newFolder) throws IOException
+	{
+		setNewFolderForFilesInFolder(currentFolder, newFolder, false);
+		setNewFolderForFilesInFolder(currentFolder, newFolder, true);
+	}
+
+	public void refreshIndex() {
+		client_.admin().indices().prepareRefresh().execute().actionGet();
+	}
+
+
+
+	
 
 
 

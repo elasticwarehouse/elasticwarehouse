@@ -29,12 +29,13 @@ import org.elasticsearch.monitor.jvm.JvmInfo;
 import org.elasticwarehouse.core.EWLogger;
 import org.elasticwarehouse.core.ElasticWarehouseConf;
 
+//TODO future: option to backup deleted files to different location
+//TODO future: ewinfo to return two versions: upload version + metadata version
 //TODO future: private files (per user)
 //TODO future: folder/files locking feature. Use it for folders renaming (i.e. lock every file/folder, then perform folder rename operation) 
 //TODO future: log details about file changes (when version increases) + copy file in case of new upload
 //TODO future: moving folders (_ewtask?action=move)
 //TODO future: resume tasks interrupted due to EW crash etc.
-//TODO future: optimize rename task (increase performance)
 //TODO future: notify graphite RRD files reader (PerformanceMonitor instance) about new RRD file created in result of expandRRDFile() method call 
 //TODO future community: ewshell show MB bytes not bytes only (human readable switch)
 //TODO future community: ewshell show stats (query, tt, parsing)

@@ -92,7 +92,7 @@ public class ElasticWarehouseAPIProcessorInfo extends ElasticWarehouseAPIProcess
 			if( params.folder != null )
 				params.folder = params.folder.trim();
 			if( params.filename != null )
-				params.filename = params.filename.trim();
+				params.filename = params.filename.trim().toLowerCase();
 			
 			String sshowrequest = request.getParameter("showrequest");
 			if( sshowrequest != null )
@@ -167,7 +167,7 @@ public class ElasticWarehouseAPIProcessorInfo extends ElasticWarehouseAPIProcess
 		        		QueryBuilders.boolQuery()
 	    					//.must(QueryBuilders.termQuery("isfolder", true) )
 	    					//.must(QueryBuilders.termQuery("folder", folder) 
-	    					.must(QueryBuilders.prefixQuery("folderna", folder) )
+	    					.must(QueryBuilders.termQuery("folderna", folder) )
 	    					.must(QueryBuilders.termQuery("filenamena", params.filename))
 	    					.must(QueryBuilders.termQuery("isfolder", false))
 	    					//.should(QueryBuilders.termQuery("filenamena", possiblefolder))

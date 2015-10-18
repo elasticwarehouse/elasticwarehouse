@@ -105,7 +105,7 @@ public class ElasticWarehouseFile {
 	
 	protected String uploadedfilename_;
 	protected String fname_ ;
-	protected String targetfolder_;
+	public String targetfolder_;
 	protected boolean isfolder_ = false;
 	protected long fsize_ = 0;
 	

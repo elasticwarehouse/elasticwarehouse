@@ -221,8 +221,15 @@ public class ElasticWarehouseAPIProcessorTask
 				}
 				else
 				{
-					ElasticWarehouseTask taskUUID = tasksManager_.rename(params.id, params.targetname);
-					os.write(responser.taskAcceptedMessage("rename id="+params.id, 0, taskUUID));
+					//check if any other task is running on current item
+					LinkedList<String> ctasks = tasksManager_.getTasks(false, conf_.getNodeName()/* NetworkTools.getHostName()*/, 999, 0, false, true, params.id );
+					if( ctasks.size() > 0 )
+					{
+						os.write(responser.errorMessage("Another task is running on current item. Try again later or cancel tasks:"+ctasks.toString(), ElasticWarehouseConf.URL_GUIDE_TASK));
+					}else{
+						ElasticWarehouseTask taskUUID = tasksManager_.rename(params.id, params.targetname);
+						os.write(responser.taskAcceptedMessage("rename id="+params.id, 0, taskUUID));
+					}
 				}
 			}
 			else if(params.action.equals("delete"))
