@@ -86,7 +86,7 @@
 		    <version>${elasticwarehouse.version}-${elastic.version}</version>
 		    <scope>system</scope>
     		    <!--<systemPath>${basedir}/../elasticwarehouse.core/target/elasticwarehouse.core-${elasticwarehouse.version}-${elastic.version}.jar</systemPath> -->
-		    <systemPath>${basedir}/../elasticwarehouse.core/target_copy/elasticwarehouse.core-${elasticwarehouse.version}-${elastic.version}.jar</systemPath>
+		    <systemPath>${basedir}/../elasticwarehouse.core/target/elasticwarehouse.core-${elasticwarehouse.version}-${elastic.version}.jar</systemPath>
   		</dependency>
   
 		<dependency>
@@ -224,14 +224,14 @@
                         <configuration>
                             <target>
 				<!--<copy file="${basedir}/../elasticwarehouse.core/target/elasticwarehouse.core-${elasticwarehouse.version}-${elastic.version}-jar-with-dependencies.jar" todir="${project.build.directory}" />-->
-				<copy file="${basedir}/../elasticwarehouse.core/target_copy/elasticwarehouse.core-${elasticwarehouse.version}-${elastic.version}-jar-with-dependencies.jar" todir="${project.build.directory}" />
+				<copy file="${basedir}/../elasticwarehouse.core/target/elasticwarehouse.core-${elasticwarehouse.version}-${elastic.version}-jar-with-dependencies.jar" todir="${project.build.directory}" />
 				<copy file="${basedir}/../elasticwarehouse.core/config/elasticwarehouse.yml" todir="${project.build.directory}/config" />
                                 <zip basedir="${project.build.directory}"
                                      includes="${project.build.finalName}.jar config/elasticwarehouse.yml elasticwarehouse.core-${elasticwarehouse.version}-${elastic.version}-jar-with-dependencies.jar"
                                      destfile="${project.build.directory}/elasticsearch-${project.name}-${elasticwarehouse.version}-${elastic.version}-with-dependencies.zip" />
 				<delete file="${project.build.directory}/elasticwarehouse.core-${elasticwarehouse.version}-${elastic.version}-jar-with-dependencies.jar"/>
 				<!--<copy file="${basedir}/../elasticwarehouse.core/target/elasticwarehouse.core-${elasticwarehouse.version}-${elastic.version}.jar" todir="${project.build.directory}" />-->
-				<copy file="${basedir}/../elasticwarehouse.core/target_copy/elasticwarehouse.core-${elasticwarehouse.version}-${elastic.version}.jar" todir="${project.build.directory}" />
+				<copy file="${basedir}/../elasticwarehouse.core/target/elasticwarehouse.core-${elasticwarehouse.version}-${elastic.version}.jar" todir="${project.build.directory}" />
 				<zip basedir="${project.build.directory}"
                                      includes="${project.build.finalName}.jar config/elasticwarehouse.yml elasticwarehouse.core-${elasticwarehouse.version}-${elastic.version}.jar"
                                      destfile="${project.build.directory}/elasticsearch-${project.name}-${elasticwarehouse.version}-${elastic.version}.zip" />

@@ -509,48 +509,7 @@ public class ElasticSearchAccessor
 		}
 		return ret;
 	}
-	public LinkedList<EwBrowseTuple> findAllSubFolders(String folderPrefix)
-	{
-		String folder = ResourceTools.preprocessFolderName(folderPrefix);
-		LinkedList<EwBrowseTuple> ret = new LinkedList<EwBrowseTuple>();
-		SearchResponse searchResponse = client_.prepareSearch( conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_STORAGE_NAME) )
-				.setTypes(conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_STORAGE_CHILDTYPE),
-						  conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_STORAGE_TYPE) )
-		        .setQuery(
-		        		QueryBuilders.boolQuery()
-    						.must(QueryBuilders.termQuery("isfolder", true) )
-    						.must(prefixQuery("folderna", folder) ) )
-		        .setSize(SIZE_NO_LIMIT)
-		        .setVersion(true)
-		        .execute()
-		        .actionGet();
-
-		for (SearchHit hit : searchResponse.getHits()) 
-	    {
-			EwBrowseTuple tuple = new EwBrowseTuple(hit);
-	    	ret.add(tuple);
-		}
-		return ret;
-	}
 	
-	public LinkedList<String> findAllSubFilesAndFolders(String folderPrefix)
-	{
-		String folder = ResourceTools.preprocessFolderName(folderPrefix);
-		LinkedList<String> ret = new LinkedList<String>();
-		SearchResponse searchResponse = client_.prepareSearch( conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_STORAGE_NAME) /*ElasticWarehouseConf.defaultIndexName_*/)
-				.setTypes(conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_STORAGE_CHILDTYPE),
-						conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_STORAGE_TYPE) )
-		        .setQuery(prefixQuery("folderna", folder) )
-		        .setSize(SIZE_NO_LIMIT)
-		        .execute()
-		        .actionGet();
-		for (SearchHit hit : searchResponse.getHits()) 
-	    {
-	    	String id = hit.getId();
-	    	ret.add(id);
-		}
-		return ret;
-	}
 	public synchronized void deleteChildren(String id)
 	{
 		DeleteByQueryResponse deleteResponse = client_.prepareDeleteByQuery(conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_STORAGE_NAME) /*ElasticWarehouseConf.defaultIndexName_*/)
@@ -1081,33 +1040,6 @@ public class ElasticSearchAccessor
 
 		}
 		return ret;
-	}
-
-
-
-	public EwInfoTuple getFileInfoById(String id, boolean showrequest, boolean includechildren) {
-		EwInfoTuple ei = new EwInfoTuple();
-		GetRequestBuilder getreqbuilder = client_.prepareGet(conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_STORAGE_NAME), 
-				conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_STORAGE_TYPE), id);
-		
-		if( showrequest )
-			System.out.println(getreqbuilder.toString());
-		
-		GetResponse response = getreqbuilder.execute().actionGet();
-		if( response.isExists() == false && includechildren )
-		{
-			getreqbuilder = client_.prepareGet(conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_STORAGE_NAME), 
-					conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_STORAGE_CHILDTYPE), id);
-			if( showrequest )
-				System.out.println(getreqbuilder.toString());
-			response = getreqbuilder.execute().actionGet();
-		}
-		ei.isexists = response.isExists();
-		ei.source = response.getSourceAsMap();
-		ei.id = response.getId();
-		ei.version = response.getVersion();
-		
-		return ei;
 	}
 
 	public boolean setFolder(String id, String newFolderPath) {

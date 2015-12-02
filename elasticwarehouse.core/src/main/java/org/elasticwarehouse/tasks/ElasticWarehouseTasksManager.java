@@ -218,8 +218,6 @@ public class ElasticWarehouseTasksManager {
 			return new ElasticWarehouseTaskMkdir(acccessor_, conf_, source);
 		else if( source.get("action").equals("rmdir") )
 			return new ElasticWarehouseTaskRmdir(acccessor_, conf_, source);
-		else if( source.get("action").equals("rename") )
-			return new ElasticWarehouseTaskRename(acccessor_, conf_, source);
 		else if( source.get("action").equals("move") )
 			return new ElasticWarehouseTaskMove(acccessor_, conf_, source);
 		else if( source.get("action").equals("delete") )
@@ -262,16 +260,6 @@ public class ElasticWarehouseTasksManager {
 		task.start();		
 		String taskId = task.indexTask();
 		//runningTasks_.add(task);
-		return task;
-	}
-	public ElasticWarehouseTask rename(String id, String targetname)throws IOException
-	{
-		checkCurrentlyRunningTasks();
-		
-		ElasticWarehouseTaskRename task = new ElasticWarehouseTaskRename(acccessor_, conf_, id, targetname);
-		task.start();		
-		String taskId = task.indexTask();
-		runningTasks_.add(task);
 		return task;
 	}
 	

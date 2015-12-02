@@ -61,14 +61,14 @@ public class ElasticWarehouseRequestHandlerAPI  extends AbstractHandler{
 
 	private ElasticSearchAccessor accessor_;
 	
-	public ElasticWarehouseRequestHandlerAPI(ElasticSearchAccessor accessor, ElasticWarehouseConf conf, ElasticWarehouseTasksManager tasksManager, ElasticWarehouseServerMonitoringNotifier monitoringNotifier) throws MalformedObjectNameException, IntrospectionException, InstanceNotFoundException, NullPointerException, ReflectionException, IOException, ParseException, InterruptedException {
+	public ElasticWarehouseRequestHandlerAPI(ElasticSearchAccessor accessor, ElasticWarehouseConf conf, ElasticWarehouseTasksManager tasksManager) throws MalformedObjectNameException, IntrospectionException, InstanceNotFoundException, NullPointerException, ReflectionException, IOException, ParseException, InterruptedException {
 		esClient_ = accessor.getClient();
 		accessor_ = accessor;
 		conf_ = conf;
 		searchProcessor_ = new ElasticWarehouseAPIProcessorSearch(conf_);
 		summaryProcessor_ = new ElasticWarehouseAPIProcessorSummary(conf_, accessor, tasksManager);
 		taskProcessor_ = new ElasticWarehouseAPIProcessorTask(tasksManager, conf_);
-		graphiteProcessor_ = new ElasticWarehouseAPIProcessorGraphite(conf_, accessor, monitoringNotifier);
+		graphiteProcessor_ = new ElasticWarehouseAPIProcessorGraphite(conf_, accessor);
 		browseProcessor_ = new ElasticWarehouseAPIProcessorBrowse(conf_, accessor);
 		infoProcessor_ = new ElasticWarehouseAPIProcessorInfo(conf_, accessor, tasksManager);
 		getProcessor_ = new ElasticWarehouseAPIProcessorGet(conf_, accessor);
