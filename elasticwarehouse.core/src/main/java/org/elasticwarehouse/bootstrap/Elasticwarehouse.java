@@ -30,7 +30,6 @@ import org.elasticwarehouse.core.ElasticWarehouseMonitoring;
 import org.elasticwarehouse.core.ElasticWarehouseServerAPI;
 import org.elasticwarehouse.core.ElasticWarehouseServerAPINotifier;
 import org.elasticwarehouse.core.ElasticWarehouseServerGrafana;
-import org.elasticwarehouse.core.ElasticWarehouseServerMonitoringNotifier;
 
 public class Elasticwarehouse {
 
@@ -52,7 +51,6 @@ public class Elasticwarehouse {
         //final PerformanceMonitor monitor = new PerformanceMonitor(c);
 		
         final ElasticWarehouseServerAPINotifier apiNotifier = new ElasticWarehouseServerAPINotifier();
-        final ElasticWarehouseServerMonitoringNotifier monitoringNotifier = new ElasticWarehouseServerMonitoringNotifier();
         
         final String esHostPort = elasticSearchAccessor_.getHostPort(); 
         
@@ -80,7 +78,7 @@ public class Elasticwarehouse {
 		        	LOGGER.info("Starting ElasticWarehouseServer for WarehouseAPI");
 		            Thread.sleep(100);
 		            try {
-						elasticWarehouseServerAPI_.startServer(c, elasticSearchAccessor_ , apiNotifier, monitoringNotifier);//blocking method
+						elasticWarehouseServerAPI_.startServer(c, elasticSearchAccessor_ , apiNotifier);//blocking method
 					} catch (IOException e) {
 						EWLogger.logerror(e);
 						e.printStackTrace();
@@ -104,7 +102,7 @@ public class Elasticwarehouse {
 			        try {
 			            LOGGER.info("Starting ElasticWarehouseServer for Monitoring");
 			            Thread.sleep(100);
-			            elasticWarehouseServerMonitoring_.startMonitor(c,elasticSearchAccessor_, monitoringNotifier);	//blocking method
+			            elasticWarehouseServerMonitoring_.startMonitor(c,elasticSearchAccessor_);	//blocking method
 			            LOGGER.info("Stopping ElasticWarehouseServer for Monitoring");
 			        } catch(InterruptedException v) {
 			        	EWLogger.logerror(v);

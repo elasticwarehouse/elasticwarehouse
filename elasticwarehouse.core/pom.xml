@@ -26,13 +26,13 @@
 		<maven.build.timestamp.format>yyyy-MM-dd'T'HH:mm:ssZ</maven.build.timestamp.format>
 		
 		<jdk.version>1.7</jdk.version>
-		<jodatime.version>2.5</jodatime.version>
+		<jodatime.version>2.8.2</jodatime.version>
 		<junit.version>4.11</junit.version>
 		<log4j.version>1.2.17</log4j.version>
 
-		<elastic.version>1.7.1</elastic.version>
-		<lucene.version>4.10.4</lucene.version>
-		
+		<elastic.version>2.0.0</elastic.version>
+		<lucene.version>5.2.1</lucene.version>
+		<testframework.version>2.1.16</testframework.version>
 		<grafana.version>1.9.0</grafana.version>
   </properties>
 <build>
@@ -259,10 +259,10 @@
       		<version>6.1.26</version>
     	</dependency> -->
 		<dependency>
-	<groupId>org.eclipse.jetty</groupId>
-	<artifactId>jetty-server</artifactId>
-	<version>9.2.7.v20150116</version>
-</dependency>
+			<groupId>org.eclipse.jetty</groupId>
+			<artifactId>jetty-server</artifactId>
+			<version>9.2.7.v20150116</version>
+		</dependency>
 		
 		
   </dependencies>

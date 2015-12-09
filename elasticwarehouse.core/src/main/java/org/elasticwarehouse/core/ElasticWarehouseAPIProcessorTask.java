@@ -209,29 +209,6 @@ public class ElasticWarehouseAPIProcessorTask
 					os.write(responser.taskAcceptedMessage("move id="+params.id + " to "+params.folder, 0, taskUUID));
 				}
 			}
-			else if(params.action.equals("rename"))
-			{
-				if( params.id == null)
-				{
-					os.write(responser.errorMessage("Please provide id of file or folder to be renamed.", ElasticWarehouseConf.URL_GUIDE_TASK));
-				}
-				else if( params.targetname == null || params.targetname.length()==0 )
-				{
-					os.write(responser.errorMessage("targetname cannot be empty.", ElasticWarehouseConf.URL_GUIDE_TASK));
-				}
-				else
-				{
-					//check if any other task is running on current item
-					LinkedList<String> ctasks = tasksManager_.getTasks(false, conf_.getNodeName()/* NetworkTools.getHostName()*/, 999, 0, false, true, params.id );
-					if( ctasks.size() > 0 )
-					{
-						os.write(responser.errorMessage("Another task is running on current item. Try again later or cancel tasks:"+ctasks.toString(), ElasticWarehouseConf.URL_GUIDE_TASK));
-					}else{
-						ElasticWarehouseTask taskUUID = tasksManager_.rename(params.id, params.targetname);
-						os.write(responser.taskAcceptedMessage("rename id="+params.id, 0, taskUUID));
-					}
-				}
-			}
 			else if(params.action.equals("delete"))
 			{
 				//String id = request.getParameter("id");

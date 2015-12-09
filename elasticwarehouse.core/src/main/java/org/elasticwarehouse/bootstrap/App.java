@@ -22,7 +22,7 @@ package org.elasticwarehouse.bootstrap;
 import java.io.File;
 import java.io.FileOutputStream;
 
-import org.elasticsearch.common.base.Charsets;
+import java.nio.charset.StandardCharsets;
 import org.elasticsearch.common.io.FileSystemUtils;
 
 import org.elasticsearch.monitor.jvm.JvmInfo;
@@ -62,10 +62,10 @@ public class App
             try {
                 File fPidFile = new File(pidFile);
                 if (fPidFile.getParentFile() != null) {
-                    FileSystemUtils.mkdirs(fPidFile.getParentFile());
+                    fPidFile.getParentFile().mkdirs();
                 }
                 FileOutputStream outputStream = new FileOutputStream(fPidFile);
-                outputStream.write(Long.toString(JvmInfo.jvmInfo().pid()).getBytes(Charsets.UTF_8));
+                outputStream.write(Long.toString(JvmInfo.jvmInfo().pid()).getBytes(StandardCharsets.UTF_8));
                 outputStream.close();
 
                 fPidFile.deleteOnExit();

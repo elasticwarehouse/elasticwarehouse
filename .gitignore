@@ -1,0 +1,10 @@
+elasticwarehouse.core/.classpath
+*.class
+*.project
+elasticwarehouse.core/.settings/org.eclipse.jdt.core.prefs
+elasticwarehouse.plugin/.classpath
+elasticwarehouse.plugin/target/**
+elasticwarehouse.core/target/**
+elasticwarehouse.core/.settings/org.eclipse.m2e.core.prefs
+elasticwarehouse.plugin/.settings/org.eclipse.jdt.core.prefs
+elasticwarehouse.plugin/.settings/org.eclipse.m2e.core.prefs

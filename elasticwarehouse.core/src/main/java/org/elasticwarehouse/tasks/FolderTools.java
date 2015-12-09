@@ -25,7 +25,6 @@ import java.util.LinkedList;
 import org.elasticwarehouse.core.EWLogger;
 import org.elasticwarehouse.core.ElasticSearchAccessor;
 import org.elasticwarehouse.core.ElasticWarehouseConf;
-import org.elasticwarehouse.core.EwInfoTuple;
 import org.elasticwarehouse.core.ResourceTools;
 import org.elasticwarehouse.core.parsers.ElasticWarehouseFolder;
 

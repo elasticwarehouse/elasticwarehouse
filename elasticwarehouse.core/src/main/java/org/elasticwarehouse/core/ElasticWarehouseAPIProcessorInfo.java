@@ -35,6 +35,7 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.xcontent.XContentBuilder;
+import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.rest.RestRequest;
 import org.elasticsearch.search.highlight.HighlightBuilder;
@@ -116,123 +117,37 @@ public class ElasticWarehouseAPIProcessorInfo extends ElasticWarehouseAPIProcess
 	public boolean processRequest(Client esClient, OutputStream os, ElasticWarehouseAPIProcessorInfoParams params) throws IOException
 	{
 		boolean ret = false;
-		//boolean showrequest = ParseTools.parseBooleanDirect(request.getParameter("showrequest"), false);
-		boolean infoById = ( params.id!= null && params.id.length() > 0 );
-		boolean infoByFilename = ( params.folder!= null && params.folder.length() > 0 && params.filename!= null && params.filename.length() > 0 );
-		
-		if( params.set && ( (params.attribute==null || params.attribute.length()==0) || (params.value==null || params.value.length()==0) )  )
-		{
-			os.write(responser.errorMessage("When set=true, parameters 'attribute' and 'value' must be also provided.", ElasticWarehouseConf.URL_GUIDE_INFO));
-			return ret;
-		}
-		
-		if( params.attribute != null && ElasticWarehouseMapping.availableFieldsForModification.contains(params.attribute) == false )
-		{
-			os.write(responser.errorMessage("Field " + params.attribute + " is not valid field name or it's not possible to change it's value via REST.", ElasticWarehouseConf.URL_GUIDE_INFO));
-			return ret;
-		}
-		
-
-		if( infoById == false && infoByFilename == false )
-		{
-			os.write(responser.errorMessage("Please provide id or folder/filename to get file information.", ElasticWarehouseConf.URL_GUIDE_INFO));
-		}
-		else
-		{
-			//Map<String, Object> source = null;
-			//boolean isexists = false;
-			//String id = "";
-			//long version = 0;
-			EwInfoTuple infotuple = null;
-			if( infoById )
-			{
-				if( params.set )
-					elasticSearchAccessor_.setFileAttribute(params.attribute, params.id, params.value);
-				infotuple = elasticSearchAccessor_.getFileInfoById(params.id, params.showrequest, false);
-				if( infotuple.isexists )
-					infotuple.tasks = tasksManager_.getTasks(false, conf_.getNodeName()/* NetworkTools.getHostName()*/, 999, 0, false, true, infotuple.id );
-			}
-			else
-			{
-				SearchRequestBuilder esreq =esClient.prepareSearch(conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_STORAGE_NAME) )
-						.setTypes(conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_STORAGE_TYPE) )
-						.setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
-						.setFetchSource(null, new String[] {"filecontent","filetext"})
-						.setVersion(true)
-						.setSize(1);
-				String folder = ResourceTools.preprocessFolderName(params.folder.toLowerCase());
-				String possiblefolder = ResourceTools.preprocessFolderName(params.folder.toLowerCase()+"/"+params.filename);
-				
-				esreq.setQuery(
-		        		QueryBuilders.boolQuery()
-	    					//.must(QueryBuilders.termQuery("isfolder", true) )
-	    					//.must(QueryBuilders.termQuery("folder", folder) 
-	    					.must(QueryBuilders.termQuery("folderna", folder) )
-	    					.must(QueryBuilders.termQuery("filenamena", params.filename))
-	    					.must(QueryBuilders.termQuery("isfolder", false))
-	    					//.should(QueryBuilders.termQuery("filenamena", possiblefolder))
-	    					//.minimumNumberShouldMatch(1)
-					);
-				if( params.showrequest )
-					System.out.println(esreq.toString());
-				
-				SearchResponse response = esreq.execute().actionGet();
-				
-				infotuple = new EwInfoTuple();
-				infotuple.isexists = (response.getHits().getHits().length == 1);
-				
-				//if file doesn't exist , then maybe ID is a folder?
-				if( !infotuple.isexists )
-				{
-					esreq.setQuery(
-			        		QueryBuilders.boolQuery()
-		    					.must(QueryBuilders.termQuery("folderna", possiblefolder) )
-		    					.must(QueryBuilders.termQuery("isfolder", true))
-						);
-					if( params.showrequest )
-						System.out.println(esreq.toString());
-					
-					response = esreq.execute().actionGet();
-					infotuple.isexists = (response.getHits().getHits().length == 1);
-				}
-				if(infotuple.isexists )
-				{
-					infotuple.id = response.getHits().getAt(0).getId();
-					infotuple.version = response.getHits().getAt(0).getVersion();
-					infotuple.source = response.getHits().getAt(0).sourceAsMap();
-					infotuple.tasks = tasksManager_.getTasks(false, conf_.getNodeName()/* NetworkTools.getHostName()*/, 999, 0, false, true, infotuple.id );
-					
-					if( params.set )
-					{
-						elasticSearchAccessor_.setFileAttribute(params.attribute, params.id, params.value);
-						//and modify response to don't query again
-						infotuple.source.put(params.attribute, params.value);
-					}
-				}
-			}
-			if( infotuple.isexists )
-			{
-				infotuple.source.put("version", infotuple.version );
-				infotuple.source.put("id", infotuple.id );
-				infotuple.source.put("activetasks", infotuple.tasks );
-				infotuple.source.remove("filethumb_thumb");
-				infotuple.source.remove("filecontent");
-				infotuple.source.remove("filetext");
-				infotuple.source.remove("filenamena");
-				infotuple.source.remove("folderna");
-
-				LinkedList<String> childfiles = elasticSearchAccessor_.findChildren(infotuple.id);
-				infotuple.source.put("children", childfiles);
-
-				XContentBuilder builder = jsonBuilder();
-				builder.map(infotuple.source);
-				os.write( builder.string().getBytes() );
-				ret = true;
-			}else{
-				os.write(responser.errorMessage("provided id or folder/filename doesn't exist. Please provide correct file Id or path folder/filename.", ElasticWarehouseConf.URL_GUIDE_INFO));
-			}
-		}
-		return ret;
+	    if (params.id == null)
+	    {
+	      os.write(this.responser.errorMessage("id attribute is mandatory.", "http://elasticwarehouse.org/guide-info/"));
+	    }
+	    else
+	    {
+	      GetResponse response = (GetResponse)esClient.prepareGet(this.conf_.getWarehouseValue("elasticsearch.index.storage.name"), this.conf_.getWarehouseValue("elasticsearch.index.storage.type"), params.id).execute().actionGet();
+	      if (response.isExists())
+	      {
+	        Map<String, Object> source = response.getSourceAsMap();
+	        source.put("version", Long.valueOf(response.getVersion()));
+	        source.remove("filethumb_thumb");
+	        source.remove("filecontent");
+	        source.remove("filetext");
+	        source.remove("filenamena");
+	        source.remove("folderna");
+	        
+	        LinkedList<String> childfiles = this.elasticSearchAccessor_.findChildren(response.getId());
+	        source.put("children", childfiles);
+	        
+	        XContentBuilder builder = XContentFactory.jsonBuilder();
+	        builder.map(source);
+	        os.write(builder.string().getBytes());
+	        ret = true;
+	      }
+	      else
+	      {
+	        os.write(this.responser.errorMessage("provided id doesn't exist. Please provide correct file Id.", "http://elasticwarehouse.org/guide-info/"));
+	      }
+	    }
+	    return ret;
 	}
 
 	public ElasticWarehouseAPIProcessorInfoParams createEmptyParams() {
