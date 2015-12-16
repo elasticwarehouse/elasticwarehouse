@@ -19,8 +19,6 @@
  ****************************************************************/
 package org.elasticwarehouse.core;
 
-import org.elasticsearch.common.io.FastStringReader;
-import org.elasticsearch.common.io.Streams;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 
@@ -40,9 +38,9 @@ public class Build {
         String esversion = "NA";
         
         try {
-            String properties = Streams.copyToStringFromClasspath("/ew-build.properties");
+        	
             Properties props = new Properties();
-            props.load(new FastStringReader(properties));
+            props.load(Build.class.getClassLoader().getResourceAsStream("/ew-build.properties"));
             
             version = props.getProperty("version", version);
             grafanaversion = props.getProperty("grafanaversion", grafanaversion);

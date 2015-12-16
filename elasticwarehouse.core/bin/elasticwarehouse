@@ -160,6 +160,10 @@ done
 args=`getopt vdhp:D:X: $ARGV`
 eval set -- "$args"
 
+#echo "***********************************"
+#echo $ES_CLASSPATH
+#echo "***********************************"
+
 while true; do
     case $1 in
         -v)

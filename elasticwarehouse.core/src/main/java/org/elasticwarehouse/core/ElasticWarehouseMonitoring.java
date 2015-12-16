@@ -169,15 +169,18 @@ public class ElasticWarehouseMonitoring
 				
 				try 
 				{
-					LinkedList<String> estypes = esmonitor.getAvailableTypes();
-					for(String estype: estypes)
+					if( esmonitor != null )
 					{
-						LinkedList<AtrrValue> attval = new LinkedList<AtrrValue>();
-						esmonitor.fetchCustomPerformanceCounters(estype, attval);
-						if( esmonitor.IsPerformanceCounterExist(estype) )
-							esmonitor.saveCustomPerformanceCounter(estype, attval);
-						else
-							LOGGER.debug("Found file for: " +estype+", but performance counters are not available.");
+						LinkedList<String> estypes = esmonitor.getAvailableTypes();
+						for(String estype: estypes)
+						{
+							LinkedList<AtrrValue> attval = new LinkedList<AtrrValue>();
+							esmonitor.fetchCustomPerformanceCounters(estype, attval);
+							if( esmonitor.IsPerformanceCounterExist(estype) )
+								esmonitor.saveCustomPerformanceCounter(estype, attval);
+							else
+								LOGGER.debug("Found file for: " +estype+", but performance counters are not available.");
+						}
 					}
 				} catch (NullPointerException e) {
 					LOGGER.error(e.getMessage());

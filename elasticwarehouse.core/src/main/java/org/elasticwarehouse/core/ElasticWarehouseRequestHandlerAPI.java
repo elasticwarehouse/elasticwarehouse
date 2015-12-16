@@ -39,6 +39,7 @@ import org.apache.log4j.Logger;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.elasticsearch.client.Client;
+import org.elasticsearch.index.IndexNotFoundException;
 import org.elasticwarehouse.core.graphite.DDRFileNotFoundException;
 import org.elasticwarehouse.tasks.ElasticWarehouseTasksManager;
 
@@ -201,7 +202,8 @@ public class ElasticWarehouseRequestHandlerAPI  extends AbstractHandler{
 				os.write(responser.errorMessage(pathinfo + " rest point is not supported", ElasticWarehouseConf.URL_GUIDE));
 			}
 
-		} catch (org.elasticsearch.indices.IndexMissingException e) {
+		} catch (IndexNotFoundException e) {	//ES 2.x experiment
+		//} catch (org.elasticsearch.indices.IndexMissingException e) { //1.x
 			EWLogger.logerror(e);
 			accessor_.recreateTemplatesAndIndices(true);
 			os.write(responser.errorMessage("One of indices was missing. Indices have been recreated - send your request once again.", ElasticWarehouseConf.URL_GUIDE));

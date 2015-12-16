@@ -20,13 +20,14 @@
 package org.elasticwarehouse.core;
 
 import static org.elasticsearch.node.NodeBuilder.*;
-import static org.elasticsearch.index.query.FilterBuilders.*;
+//import static org.elasticsearch.index.query.FilterBuilders.*;
 import static org.elasticsearch.index.query.QueryBuilders.*;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.net.InetSocketAddress;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -71,7 +72,7 @@ import org.elasticsearch.action.bulk.BulkProcessor;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.delete.DeleteResponse;
-import org.elasticsearch.action.deletebyquery.DeleteByQueryResponse;
+//import org.elasticsearch.action.deletebyquery.DeleteByQueryResponse; ES 2.x experiment
 import org.elasticsearch.action.get.GetRequestBuilder;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexResponse;
@@ -90,7 +91,6 @@ import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.cluster.node.DiscoveryNodes;
 import org.elasticsearch.cluster.routing.ShardRouting;
 import org.elasticsearch.common.io.stream.OutputStreamStreamOutput;
-import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.common.transport.TransportAddress;
@@ -122,7 +122,9 @@ public class ElasticSearchAccessor
 	private String myNodeName_ = "";
 	
 	private final static Logger LOGGER = Logger.getLogger(ElasticSearchAccessor.class.getName());
-	private static final int SIZE_NO_LIMIT = 9999999; 
+	//private static final int SIZE_NO_LIMIT = 9999999; 
+	private static final int SIZE_NO_LIMIT = 10000;	//ES2.x limit
+	
 	
 	private String hostPort_ = "";
 	private ElasticWarehouseConf conf_ = null;
@@ -157,6 +159,8 @@ public class ElasticSearchAccessor
 		myNodeName_ = conf_.getNodeName();// NetworkTools.getHostName().toUpperCase();
 		embedded_ = conf_.getWarehouseBoolValue(ElasticWarehouseConf.MODEEMBEDDED, true);
 		
+		//TODO Liteshell; why ShutdownHook has been disabled?
+		
 		Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
             public void run() {
@@ -165,8 +169,8 @@ public class ElasticSearchAccessor
             		client_.close();
             	if( node_ != null )
             	{
-            		node_.stop();
-            		node_.close();
+					//node_.stop();    //if started then stop() will be called anyway, ES2.x experiment        		
+					node_.close();
             	}
             	LOGGER.info("Client stopped");
             }
@@ -183,7 +187,7 @@ public class ElasticSearchAccessor
 		client_ = null;
 		if( node_ != null )
 		{
-			node_.stop();
+			//node_.stop(); //if started then stop() will be called anyway, ES2.x experiment
 			node_.close();
 		}
 	}
@@ -496,17 +500,26 @@ public class ElasticSearchAccessor
 	public LinkedList<String> findChildren(String id)
 	{
 		LinkedList<String> ret = new LinkedList<String>();
-		SearchResponse searchResponse = client_.prepareSearch( conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_STORAGE_NAME) /*ElasticWarehouseConf.defaultIndexName_*/)
-				.setTypes(conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_STORAGE_CHILDTYPE) /*ElasticWarehouseConf.defaultChildsTypeName_*/)
+		SearchResponse searchResponse = client_.prepareSearch( conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_STORAGE_NAME) )
+				.setTypes(conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_STORAGE_CHILDTYPE) )
 		        .setQuery(termQuery("parentId", id))
 		        .setSize(SIZE_NO_LIMIT)
+		        .setSearchType(SearchType.SCAN)
+		        .setScroll(new TimeValue(60000))
 		        .execute()
 		        .actionGet();
-		for (SearchHit hit : searchResponse.getHits()) 
+		while (true)
 	    {
-	    	String childid = hit.getId();
-	    	ret.add(childid);
-		}
+			searchResponse = client_.prepareSearchScroll(searchResponse.getScrollId()).setScroll(new TimeValue(600000)).execute().actionGet();
+		    if( searchResponse.getHits().hits().length == 0 )
+		    	break;
+		    for (SearchHit hit : searchResponse.getHits()) 
+		    {
+		    	String childid = hit.getId();
+		    	ret.add(childid);
+			}
+	    }
+		
 		return ret;
 	}
 	public LinkedList<EwBrowseTuple> findAllSubFolders(String folderPrefix)
@@ -521,15 +534,24 @@ public class ElasticSearchAccessor
     						.must(QueryBuilders.termQuery("isfolder", true) )
     						.must(prefixQuery("folderna", folder) ) )
 		        .setSize(SIZE_NO_LIMIT)
+		        .setSearchType(SearchType.SCAN)
+		        .setScroll(new TimeValue(60000))
 		        .setVersion(true)
 		        .execute()
 		        .actionGet();
 
-		for (SearchHit hit : searchResponse.getHits()) 
+		while (true)
 	    {
-			EwBrowseTuple tuple = new EwBrowseTuple(hit);
-	    	ret.add(tuple);
-		}
+			searchResponse = client_.prepareSearchScroll(searchResponse.getScrollId()).setScroll(new TimeValue(600000)).execute().actionGet();
+		    if( searchResponse.getHits().hits().length == 0 )
+		    	break;
+		    for (SearchHit hit : searchResponse.getHits()) 
+		    {
+				EwBrowseTuple tuple = new EwBrowseTuple(hit);
+		    	ret.add(tuple);
+			}
+	    }
+		
 		return ret;
 	}
 	
@@ -542,22 +564,42 @@ public class ElasticSearchAccessor
 						conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_STORAGE_TYPE) )
 		        .setQuery(prefixQuery("folderna", folder) )
 		        .setSize(SIZE_NO_LIMIT)
+		        .setSearchType(SearchType.SCAN)
+		        .setScroll(new TimeValue(60000))
+		        .setFetchSource(false)
 		        .execute()
 		        .actionGet();
-		for (SearchHit hit : searchResponse.getHits()) 
+		while (true)
 	    {
-	    	String id = hit.getId();
-	    	ret.add(id);
-		}
+			searchResponse = client_.prepareSearchScroll(searchResponse.getScrollId()).setScroll(new TimeValue(600000)).execute().actionGet();
+		    if( searchResponse.getHits().hits().length == 0 )
+		    	break;
+			for (SearchHit hit : searchResponse.getHits()) 
+		    {
+		    	String id = hit.getId();
+		    	ret.add(id);
+			}
+	    }
 		return ret;
 	}
-	public synchronized void deleteChildren(String id)
+	public synchronized boolean deleteChildren(String id)
 	{
-		DeleteByQueryResponse deleteResponse = client_.prepareDeleteByQuery(conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_STORAGE_NAME) /*ElasticWarehouseConf.defaultIndexName_*/)
-				.setTypes(conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_STORAGE_CHILDTYPE) /*ElasticWarehouseConf.defaultChildsTypeName_*/)
+		//ES2.x Experiment
+		DeleteByQueryAdapter deletebyquery = new DeleteByQueryAdapter(
+				termQuery("parentId", id)
+    			);
+		boolean rc = deletebyquery.execute(client_, 
+				conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_STORAGE_NAME),
+				conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_STORAGE_CHILDTYPE)
+				);
+		
+		//ES1.x 
+		/*DeleteByQueryResponse deleteResponse = client_.prepareDeleteByQuery(conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_STORAGE_NAME) )
+				.setTypes(conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_STORAGE_CHILDTYPE) )
 		        .setQuery(termQuery("parentId", id))
 		        .execute()
-		        .actionGet();		
+		        .actionGet();*/
+		return rc;
 	}
 	
 	public synchronized void deleteFile(String id)
@@ -583,7 +625,7 @@ public class ElasticSearchAccessor
 		String clusterName = conf_.getWarehouseConfiguration().get(ElasticWarehouseConf.ESCLUSTER);
 		String hosts = conf_.getWarehouseConfiguration().get(ElasticWarehouseConf.ESTRANSPORTHOSTS);		
 		
-		TransportClient client = new TransportClient();
+		TransportClient client = TransportClient.builder().build();
 		if( hosts.length() > 0 )
 		{
 			String[] hostsArray = hosts.split(",");
@@ -593,11 +635,11 @@ public class ElasticSearchAccessor
 				if( host.contains(":") )
 				{
 					String[] parts = host.split(":");
-					client.addTransportAddress(new InetSocketTransportAddress(parts[0], Integer.parseInt(parts[1]) ) );
+					client.addTransportAddress(new InetSocketTransportAddress(new InetSocketAddress(parts[0], Integer.parseInt(parts[1]) )) );
 					if( hostPort_.length() == 0 )
 						hostPort_ = parts[0]+":9200";
 				}else{
-					client.addTransportAddress(new InetSocketTransportAddress(host, 9300 ) );
+					client.addTransportAddress(new InetSocketTransportAddress(new InetSocketAddress(host, 9300 )) );
 					if( hostPort_.length() == 0 )
 						hostPort_ = host+":9200";
 				}
@@ -605,7 +647,7 @@ public class ElasticSearchAccessor
 		}
 		/*if( clusterName.length() > 0 )
 		{
-			Settings settings = ImmutableSettings.settingsBuilder()
+			Settings settings = Settings.settingsBuilder()
 			        .put("cluster.name", clusterName)
 			        .put("client.transport.sniff", true).build();
 			client =  new TransportClient(settings);
@@ -627,7 +669,8 @@ public class ElasticSearchAccessor
 			c.put("path.plugins", conf_.getHomePath()+"/plugins" );
 		if( c.containsKey("path.conf") == false )
 			c.put("path.conf", conf_.getHomePath()+"/conf" );
-		
+		if( c.containsKey("path.home") == false )
+			c.put("path.home", conf_.getHomePath() );
 		//c.put("node.data" , "true");
 		//c.put("node.client" , "true");
 		//c.put("node.local" , "false");
@@ -656,7 +699,7 @@ public class ElasticSearchAccessor
 				// doesn't matter			
 				} 
 	    }else{ */
-	      	settings = org.elasticsearch.common.settings.ImmutableSettings.settingsBuilder()
+	      	settings = Settings.settingsBuilder()
 						.put(c)
 						.build();
 	    //}		
@@ -799,7 +842,24 @@ public class ElasticSearchAccessor
 			int level = fdlr.getFolderLevel();
 			if( level > 0 )	//cannot delete root "/"
 			{
-				DeleteByQueryResponse deleteResponse = client_.prepareDeleteByQuery(conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_STORAGE_NAME) /*ElasticWarehouseConf.defaultIndexName_*/)
+				//ES 2.x experiment
+				DeleteByQueryAdapter deletebyquery = new DeleteByQueryAdapter( 
+						QueryBuilders.boolQuery()
+			        			//.must( QueryBuilders.rangeQuery("folderlevel").gte(level) )
+			        			//.must( QueryBuilders.termQuery("folderna", folder) )
+			        			.must( QueryBuilders.prefixQuery("folderna", folder) )
+			        			);
+				boolean rc = deletebyquery.execute(client_, 
+						conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_STORAGE_NAME),
+						conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_STORAGE_CHILDTYPE) );
+				
+				if( rc )
+					rc = deletebyquery.execute(client_, 
+						conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_STORAGE_NAME),
+						conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_STORAGE_TYPE) );
+				
+				//ES 1.x
+				/*DeleteByQueryResponse deleteResponse = client_.prepareDeleteByQuery(conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_STORAGE_NAME) )
 					//.setTypes(ElasticWarehouseConf.defaultTypeName_)
 			        .setQuery( 
 			        		QueryBuilders.boolQuery()
@@ -808,11 +868,11 @@ public class ElasticSearchAccessor
 			        			.must( QueryBuilders.prefixQuery("folderna", folder) )
 			        			)
 			        .execute()
-			        .actionGet();
+			        .actionGet();*/
 				
 				refreshIndex();
 				
-				return true;
+				return rc;
 			}else{
 				return false;
 			}
@@ -1001,9 +1061,9 @@ public class ElasticSearchAccessor
             //NodeInfo info = nodesInfo.getNodesMap().get(node.id());
             NodeStats stats = nodesStats.getNodesMap().get(node.id());
             
-            short heapusedpercent = (stats == null ? -1 : stats.getJvm().getMem().getHeapUsedPrecent());
-            double loadvg = (stats == null ? -1.0 : stats.getOs() == null ? -1.0 : stats.getOs().getLoadAverage().length < 1 ? -1.0 : stats.getOs().getLoadAverage()[0] );
-            short memusedpercent = (stats == null ? -1 : stats.getOs().mem() == null ? -1 : stats.getOs().mem().usedPercent());
+            short heapusedpercent = (stats == null ? -1 : stats.getJvm().getMem().getHeapUsedPercent());
+            double loadvg = (stats == null ? -1.0 : stats.getOs() == null ? -1.0 : stats.getOs().getLoadAverage() < 1 ? -1.0 : stats.getOs().getLoadAverage() );
+            short memusedpercent = (stats == null ? -1 : stats.getOs().getMem() == null ? -1 : stats.getOs().getMem().getUsedPercent());
             String nodename = node.name();
             
             if( assignedNodes == null || assignedNodes.isEmpty() || assignedNodes.contains(nodename) )
@@ -1025,8 +1085,14 @@ public class ElasticSearchAccessor
          clusterStateRequest.clear().indices(indices).metaData(true);
          final ClusterStateResponse clusterStateResponse = client_.admin().cluster().state(clusterStateRequest).actionGet();
          
-         final String[] concreteIndices = clusterStateResponse.getState().metaData().concreteIndices(IndicesOptions.fromOptions(false, true, true, true), indices);
-         final String[] openIndices = clusterStateResponse.getState().metaData().concreteIndices(IndicesOptions.lenientExpandOpen(), indices);
+		//ES 2.x experiment
+         final String[] concreteIndices = clusterStateResponse.getState().metaData().getConcreteAllIndices();
+         final String[] openIndices = clusterStateResponse.getState().metaData().getConcreteAllOpenIndices();
+
+		//ES 1.x
+		//final String[] concreteIndices = clusterStateResponse.getState().metaData().concreteIndices(IndicesOptions.fromOptions(false, true, true, true), indices);
+        //final String[] openIndices = clusterStateResponse.getState().metaData().concreteIndices(IndicesOptions.lenientExpandOpen(), indices);
+
          ClusterHealthRequest clusterHealthRequest = Requests.clusterHealthRequest(openIndices);
          final ClusterHealthResponse clusterHealthResponse = client_.admin().cluster().health(clusterHealthRequest).actionGet();
          
@@ -1109,7 +1175,6 @@ public class ElasticSearchAccessor
 		
 		return ei;
 	}
-
 	public boolean setFolder(String id, String newFolderPath) {
 		return setFileAttribute("folder", id, newFolderPath);
 	}
@@ -1205,13 +1270,23 @@ public class ElasticSearchAccessor
         esreq
 	        .setVersion(true)
 	        .setSize(SIZE_NO_LIMIT)
+	        .setSearchType(SearchType.SCAN)
+		    .setScroll(new TimeValue(60000))
 	        .setNoFields();
         
         SearchResponse response = esreq.execute().actionGet();
-        for (SearchHit hit : response.getHits()) 
+        while (true)
 	    {
-	    	result.add(hit.getId());
-		}
+        	response = client_.prepareSearchScroll(response.getScrollId()).setScroll(new TimeValue(600000)).execute().actionGet();
+		    if( response.getHits().hits().length == 0 )
+		    	break;
+		    for (SearchHit hit : response.getHits()) 
+		    {
+		    	result.add(hit.getId());
+			}
+	    }
+        
+        
         return result;
 	}
 

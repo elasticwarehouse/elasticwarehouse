@@ -377,3 +377,6 @@ cluster.name: elasticwarehouse
 #monitor.jvm.gc.old.info: 5s
 #monitor.jvm.gc.old.debug: 2s
 
+http.cors.enabled: true
+http.cors.allow-origin: "*"
+

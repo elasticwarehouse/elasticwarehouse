@@ -153,7 +153,7 @@ public class ElasticWarehouseAPIProcessorSearch extends ElasticWarehouseAPIProce
 					}
 							
 					if( params.q.contains("*") )
-						bqbuilder.must(QueryBuilders.queryString(params.q)
+						bqbuilder.must(QueryBuilders.queryStringQuery(params.q)
 								.field("filename").field("filetitle").field("filetext").field("filemeta.metavaluetext")
 								.field("customkeywords").field("customcomments"));
 					else

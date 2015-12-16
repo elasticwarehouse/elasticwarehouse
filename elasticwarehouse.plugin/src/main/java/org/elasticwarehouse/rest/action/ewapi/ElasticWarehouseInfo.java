@@ -29,6 +29,7 @@ import java.io.OutputStream;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.index.IndexNotFoundException;
 import org.elasticsearch.rest.RestChannel;
 import org.elasticsearch.rest.RestController;
 import org.elasticsearch.rest.RestRequest;
@@ -75,7 +76,7 @@ public class ElasticWarehouseInfo extends ElasticWarehouseRestHandler {
         try {
 			processor_.processRequest(client, os, params);
 		}
-        catch(org.elasticsearch.indices.IndexMissingException e){
+        catch(IndexNotFoundException e){
         	elasticSearchAccessor_.recreateTemplatesAndIndices(false);
         	retryRequest = true;
 		}
