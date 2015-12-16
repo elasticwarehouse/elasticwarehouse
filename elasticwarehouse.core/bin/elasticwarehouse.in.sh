@@ -2,7 +2,7 @@
 
 #ES_CLASSPATH=$ES_CLASSPATH:$EW_HOME/target/*:$EW_HOME/lib/*:$EW_HOME/lib/*:$EW_HOME/lib/sigar/*
 #ES_CLASSPATH=.:$EW_HOME/target/*:$EW_HOME/lib/*
-ES_CLASSPATH=.:$EW_HOME/lib/elasticwarehouse.core-1.2.2-2.1.0-jar-with-dependencies.jar:$EW_HOME/lib/*
+ES_CLASSPATH=.:$EW_HOME/lib/*
 
 if [ "x$ES_MIN_MEM" = "x" ]; then
     ES_MIN_MEM=256m
