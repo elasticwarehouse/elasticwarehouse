@@ -1,0 +1,20 @@
+{
+	"settings" : {
+		"number_of_shards" : 5,
+		"number_of_replicas" : 1
+	},
+	"mappings": {
+		"_default_": {
+			"_all": {
+				"enabled": false
+			},
+			"dynamic": false,
+			"properties": {
+				"filethumb_thumb"  : { "type" : "binary" },
+				"filecontent" : { "type" : "binary" }
+        		}
+    		}
+    	},
+	"order": "1",
+	"template": "<templatename>*"
+}
