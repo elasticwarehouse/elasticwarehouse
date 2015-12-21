@@ -110,19 +110,13 @@ function executetask()
 	local progress=`echo $RET | jq -r '.progress'`
 	LAST_TASK_ID=$taskid
 	LAST_TASK_PROGRESS=$progress
-	echo $errorcode
-	echo $RET
+	#echo $errorcode
 	if [ $errorcode -eq 0 ]; then
 		showok "$1"
 	elif [ $errorcode -eq 60 ]; then
 		showwarning "$1 : $comment"
-	elif [ $errorcode -eq 81 ]; then
-		showwarning "$1 : $comment"
-	elif [ $errorcode -eq 70 ]; then
-		showwarning "$1 : $comment"
 	else
-		showerror "$1 : $comment"
-		exit 1
+		showwarning "$1 : $comment"
 	fi
 }
 
@@ -189,36 +183,11 @@ function executedownload()
 		curl -XGET "$HOST/_ewget?id=$ID&type=$TYPE" > $TARGETFILEPATH 2>/dev/null
 	fi
 }
-function deletebyquery()
-{
-	local INDEXNAME=$1
-	local TYPENAME=$2
-	local Q=$3
-
-	local IDS_CNT=1
-	while [ $IDS_CNT -ne 0 ]; do
-		local IDS=( $( curl -s -XGET "$ESHOST/$INDEXNAME/$TYPENAME/_search?_source=false&size=500" -d' { "query": { "match_all": {} } }' | jq -r .hits.hits[]._id 2>/dev/null ) )
-		local IDS_CNT=${#IDS[@]}
-		echo "" > /tmp/deleterequests.txt
-		for (( POS = 0 ; POS < ${#IDS[@]} ; POS++ )) do
-			echo "{ \"delete\" : { \"_index\" : \"$INDEXNAME\", \"_type\" : \"$TYPENAME\", \"_id\" : \"${IDS[$POS]}\" } }" >> /tmp/deleterequests.txt
-		done
-		echo "."
-		curl -s -XPOST "$ESHOST/_bulk" --data-binary "@/tmp/deleterequests.txt" 2>&1 >/dev/null 
-	done
-}
 function cleanall()
 {
-	#delete by query is no longer supported in ES 2.x
-	#curl -XDELETE "$ESHOST/elasticwarehousestorage/_query" -d' { "query": { "match_all": {} } }'
-	#curl -XDELETE "$ESHOST/elasticwarehousetasks/_query" -d' { "query": { "match_all": {} } }'
-	#curl -XDELETE "$ESHOST/elasticwarehouseuploads/_query" -d' { "query": { "match_all": {} } }'
-
-	deletebyquery "elasticwarehousestorage" "files" ' { "query": { "match_all": {} } }'
-	deletebyquery "elasticwarehousestorage" "childfiles" ' { "query": { "match_all": {} } }'
-	deletebyquery "elasticwarehousetasks" "tasks" ' { "query": { "match_all": {} } }'
-	deletebyquery "elasticwarehouseuploads" "uploads" ' { "query": { "match_all": {} } }'
-	
+	curl -XDELETE "$ESHOST/elasticwarehousestorage/_query" -d' { "query": { "match_all": {} } }'
+	curl -XDELETE "$ESHOST/elasticwarehousetasks/_query" -d' { "query": { "match_all": {} } }'
+	curl -XDELETE "$ESHOST/elasticwarehouseuploads/_query" -d' { "query": { "match_all": {} } }'
 	echo ""
 }
 function waitfortask()

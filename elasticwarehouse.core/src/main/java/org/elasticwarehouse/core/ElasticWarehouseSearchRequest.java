@@ -52,11 +52,11 @@ import org.elasticsearch.common.geo.GeoDistance;
 import org.elasticsearch.common.unit.DistanceUnit;
 import org.elasticsearch.common.xcontent.ToXContent;
 import org.elasticsearch.common.xcontent.XContentBuilder;
-//import org.elasticsearch.index.query.BoolFilterBuilder;
+import org.elasticsearch.index.query.BoolFilterBuilder;
 import org.elasticsearch.index.query.BoolQueryBuilder;
-//import org.elasticsearch.index.query.FilterBuilders; //ES2.x experiment
-//import org.elasticsearch.index.query.GeoPolygonFilterBuilder;
-import org.elasticsearch.index.query.GeoPolygonQueryBuilder;
+import org.elasticsearch.index.query.FilterBuilders; //ES2.x experiment
+import org.elasticsearch.index.query.GeoPolygonFilterBuilder;
+//import org.elasticsearch.index.query.GeoPolygonQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.rest.BytesRestResponse;
@@ -382,7 +382,7 @@ public class ElasticWarehouseSearchRequest extends ElasticWarehouseReqRespHelper
 	    if( queryfields_.size() > 0 )
 	    {
 	    	BoolQueryBuilder multiQuery = QueryBuilders.boolQuery();
-	    	BoolQueryBuilder multiFilter = QueryBuilders.boolQuery();
+	    	BoolFilterBuilder multiFilter = FilterBuilders.boolFilter();
 	    	boolean useFilter = false;
 	    	Iterator<Entry<String, String>> it = queryfields_.entrySet().iterator();
 	        while (it.hasNext())
@@ -542,7 +542,7 @@ public class ElasticWarehouseSearchRequest extends ElasticWarehouseReqRespHelper
 		return response;
 	}
 
-	private void buildGeoQuery(BoolQueryBuilder multiQuery, BoolQueryBuilder multiFilter, String fieldname, String fieldvalue) throws ElasticWarehouseAPIExecutionException
+	private void buildGeoQuery(BoolQueryBuilder multiQuery, BoolFilterBuilder multiFilter, String fieldname, String fieldvalue) throws ElasticWarehouseAPIExecutionException
 	{
     	String distance = null;
     	JSONArray box = null;
@@ -558,7 +558,7 @@ public class ElasticWarehouseSearchRequest extends ElasticWarehouseReqRespHelper
     				throw new ElasticWarehouseAPIExecutionException( "Format of Json request is wrong. Distance geo search expects two parameters 'lan' and 'lon'" );
     			double lat = obj.getDouble("lat");
     			double lon = obj.getDouble("lon");
-    			multiFilter.must( QueryBuilders.geoDistanceQuery(fieldname).distance(distance).lat(lat).lon(lon) );
+    			multiFilter.must( FilterBuilders.geoDistanceFilter(fieldname).distance(distance).lat(lat).lon(lon) );
     		}
     		else if( obj.has("box") )
     		{
@@ -575,13 +575,13 @@ public class ElasticWarehouseSearchRequest extends ElasticWarehouseReqRespHelper
 					double lon1 = box.getJSONObject(0).getDouble("lon");
 					double lat2 = box.getJSONObject(1).getDouble("lat");
 					double lon2 = box.getJSONObject(1).getDouble("lon");
-					multiFilter.must( QueryBuilders.geoBoundingBoxQuery(fieldname).topLeft(lat1, lon1).bottomRight(lat2, lon2) );
+					multiFilter.must( FilterBuilders.geoBoundingBoxFilter(fieldname).topLeft(lat1, lon1).bottomRight(lat2, lon2) );
     			}
     		}
     		else if( obj.has("polygon") )
     		{
     			polygon = obj.getJSONArray("polygon");
-    			GeoPolygonQueryBuilder polygonbuilder = QueryBuilders.geoPolygonQuery(fieldname);
+    			GeoPolygonFilterBuilder polygonbuilder = FilterBuilders.geoPolygonFilter(fieldname);
     			if( polygon.length() < 3 )
     				throw new ElasticWarehouseAPIExecutionException( "Format of Json request is wrong. Polygon geo search expects at least 3 geo points to define polygon corners." );
 

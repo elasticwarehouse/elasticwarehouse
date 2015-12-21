@@ -20,14 +20,14 @@
 package org.elasticwarehouse.core;
 
 import static org.elasticsearch.node.NodeBuilder.*;
-//import static org.elasticsearch.index.query.FilterBuilders.*;
+import static org.elasticsearch.index.query.FilterBuilders.*;
 import static org.elasticsearch.index.query.QueryBuilders.*;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.net.InetSocketAddress;
+//import java.net.InetSocketAddress;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -72,7 +72,7 @@ import org.elasticsearch.action.bulk.BulkProcessor;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.delete.DeleteResponse;
-//import org.elasticsearch.action.deletebyquery.DeleteByQueryResponse; ES 2.x experiment
+import org.elasticsearch.action.deletebyquery.DeleteByQueryResponse;
 import org.elasticsearch.action.get.GetRequestBuilder;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexResponse;
@@ -91,6 +91,7 @@ import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.cluster.node.DiscoveryNodes;
 import org.elasticsearch.cluster.routing.ShardRouting;
 import org.elasticsearch.common.io.stream.OutputStreamStreamOutput;
+import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.common.transport.TransportAddress;
@@ -169,7 +170,7 @@ public class ElasticSearchAccessor
 			    		client_.close();
 			    	if( node_ != null )
 			    	{
-							//node_.stop();    //if started then stop() will be called anyway, ES2.x experiment        		
+							node_.stop();       		
 							node_.close();
 			    	}
 			    	LOGGER.info("Client stopped");
@@ -191,7 +192,7 @@ public class ElasticSearchAccessor
 		client_ = null;
 		if( node_ != null )
 		{
-			//node_.stop(); //if started then stop() will be called anyway, ES2.x experiment
+			node_.stop();
 			node_.close();
 		}
 	}
@@ -589,22 +590,12 @@ public class ElasticSearchAccessor
 	}
 	public synchronized boolean deleteChildren(String id)
 	{
-		//ES2.x Experiment
-		DeleteByQueryAdapter deletebyquery = new DeleteByQueryAdapter(
-				termQuery("parentId", id)
-    			);
-		boolean rc = deletebyquery.execute(client_, 
-				conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_STORAGE_NAME),
-				conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_STORAGE_CHILDTYPE)
-				);
-		
-		//ES1.x 
-		/*DeleteByQueryResponse deleteResponse = client_.prepareDeleteByQuery(conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_STORAGE_NAME) )
+		DeleteByQueryResponse deleteResponse = client_.prepareDeleteByQuery(conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_STORAGE_NAME) )
 				.setTypes(conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_STORAGE_CHILDTYPE) )
 		        .setQuery(termQuery("parentId", id))
 		        .execute()
-		        .actionGet();*/
-		return rc;
+		        .actionGet();
+		return true;
 	}
 	
 	public synchronized void deleteFile(String id)
@@ -630,7 +621,7 @@ public class ElasticSearchAccessor
 		String clusterName = conf_.getWarehouseConfiguration().get(ElasticWarehouseConf.ESCLUSTER);
 		String hosts = conf_.getWarehouseConfiguration().get(ElasticWarehouseConf.ESTRANSPORTHOSTS);		
 		
-		TransportClient client = TransportClient.builder().build();
+		TransportClient client = new TransportClient();
 		if( hosts.length() > 0 )
 		{
 			String[] hostsArray = hosts.split(",");
@@ -640,11 +631,11 @@ public class ElasticSearchAccessor
 				if( host.contains(":") )
 				{
 					String[] parts = host.split(":");
-					client.addTransportAddress(new InetSocketTransportAddress(new InetSocketAddress(parts[0], Integer.parseInt(parts[1]) )) );
+					client.addTransportAddress(new InetSocketTransportAddress(parts[0], Integer.parseInt(parts[1]) ) );
 					if( hostPort_.length() == 0 )
 						hostPort_ = parts[0]+":9200";
 				}else{
-					client.addTransportAddress(new InetSocketTransportAddress(new InetSocketAddress(host, 9300 )) );
+					client.addTransportAddress(new InetSocketTransportAddress(host, 9300 ) );
 					if( hostPort_.length() == 0 )
 						hostPort_ = host+":9200";
 				}
@@ -704,7 +695,7 @@ public class ElasticSearchAccessor
 				// doesn't matter			
 				} 
 	    }else{ */
-	      	settings = Settings.settingsBuilder()
+	      	settings = org.elasticsearch.common.settings.ImmutableSettings.settingsBuilder()
 						.put(c)
 						.build();
 	    //}		
@@ -847,24 +838,7 @@ public class ElasticSearchAccessor
 			int level = fdlr.getFolderLevel();
 			if( level > 0 )	//cannot delete root "/"
 			{
-				//ES 2.x experiment
-				DeleteByQueryAdapter deletebyquery = new DeleteByQueryAdapter( 
-						QueryBuilders.boolQuery()
-			        			//.must( QueryBuilders.rangeQuery("folderlevel").gte(level) )
-			        			//.must( QueryBuilders.termQuery("folderna", folder) )
-			        			.must( QueryBuilders.prefixQuery("folderna", folder) )
-			        			);
-				boolean rc = deletebyquery.execute(client_, 
-						conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_STORAGE_NAME),
-						conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_STORAGE_CHILDTYPE) );
-				
-				if( rc )
-					rc = deletebyquery.execute(client_, 
-						conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_STORAGE_NAME),
-						conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_STORAGE_TYPE) );
-				
-				//ES 1.x
-				/*DeleteByQueryResponse deleteResponse = client_.prepareDeleteByQuery(conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_STORAGE_NAME) )
+				DeleteByQueryResponse deleteResponse = client_.prepareDeleteByQuery(conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_STORAGE_NAME) )
 					//.setTypes(ElasticWarehouseConf.defaultTypeName_)
 			        .setQuery( 
 			        		QueryBuilders.boolQuery()
@@ -873,11 +847,11 @@ public class ElasticSearchAccessor
 			        			.must( QueryBuilders.prefixQuery("folderna", folder) )
 			        			)
 			        .execute()
-			        .actionGet();*/
+			        .actionGet();
 				
 				refreshIndex();
 				
-				return rc;
+				return true;
 			}else{
 				return false;
 			}
@@ -1092,13 +1066,10 @@ public class ElasticSearchAccessor
          clusterStateRequest.clear().indices(indices).metaData(true);
          final ClusterStateResponse clusterStateResponse = client_.admin().cluster().state(clusterStateRequest).actionGet();
          
-		//ES 2.x experiment
-         final String[] concreteIndices = clusterStateResponse.getState().metaData().getConcreteAllIndices();
-         final String[] openIndices = clusterStateResponse.getState().metaData().getConcreteAllOpenIndices();
 
-		//ES 1.x
-		//final String[] concreteIndices = clusterStateResponse.getState().metaData().concreteIndices(IndicesOptions.fromOptions(false, true, true, true), indices);
-        //final String[] openIndices = clusterStateResponse.getState().metaData().concreteIndices(IndicesOptions.lenientExpandOpen(), indices);
+	 //ES 1.x
+	 final String[] concreteIndices = clusterStateResponse.getState().metaData().concreteIndices(IndicesOptions.fromOptions(false, true, true, true), indices);
+         final String[] openIndices = clusterStateResponse.getState().metaData().concreteIndices(IndicesOptions.lenientExpandOpen(), indices);
 
          ClusterHealthRequest clusterHealthRequest = Requests.clusterHealthRequest(openIndices);
          final ClusterHealthResponse clusterHealthResponse = client_.admin().cluster().health(clusterHealthRequest).actionGet();

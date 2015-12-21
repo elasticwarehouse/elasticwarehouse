@@ -23,7 +23,7 @@ import org.elasticsearch.client.Client;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentBuilder;
-import org.elasticsearch.index.IndexNotFoundException;
+//import org.elasticsearch.index.IndexNotFoundException;
 import org.elasticsearch.rest.*;
 import org.elasticwarehouse.core.ElasticSearchAccessor;
 import org.elasticwarehouse.core.ElasticWarehouseAPIProcessorSearch;
@@ -81,7 +81,7 @@ public class ElasticWarehouseSearchAll extends ElasticWarehouseRestHandler {
         try {
 			processor_.processRequest(client, os, "GET", true, params);
 		}
-        catch(IndexNotFoundException e){
+        catch(org.elasticsearch.indices.IndexMissingException e){
         	elasticSearchAccessor_.recreateTemplatesAndIndices(false);
         	retryRequest = true;
 		}

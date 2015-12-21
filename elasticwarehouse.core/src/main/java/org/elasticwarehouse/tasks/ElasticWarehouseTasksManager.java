@@ -26,18 +26,25 @@ import java.util.LinkedList;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
+import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.action.deletebyquery.DeleteByQueryResponse;
 import org.elasticsearch.action.get.GetResponse;
+import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
-import org.elasticsearch.index.IndexNotFoundException;
+import org.elasticsearch.client.Client;
+import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.sort.SortBuilder;
 import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
 import org.elasticwarehouse.core.ElasticSearchAccessor;
 import org.elasticwarehouse.core.ElasticWarehouseConf;
+import org.elasticwarehouse.core.graphite.NetworkTools;
+import org.elasticwarehouse.core.parsers.ElasticWarehouseFile;
 
 public class ElasticWarehouseTasksManager {
 
@@ -62,20 +69,8 @@ public class ElasticWarehouseTasksManager {
 	public LinkedList<String> getTasks(Boolean finished, String nodename, int size, int from, boolean showrequest, boolean allnodes, String correspondingFileId)
 	{
 		LinkedList<String> ret = new LinkedList<String>();
-		
-		//ES 1.x
-		/*SearchRequestBuilder seaerchreqbuilder = acccessor_.getClient().prepareSearch(conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_TASKS_NAME) )
-				.setTypes(conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_TASKS_TYPE) )
-		        //.setSearchType(SearchType.SCAN)
-		        .setSearchType(SearchType.DFS_QUERY_THEN_FETCH);
-		        //.setScroll(new TimeValue(60000));*/
-
-		/*ElasticWarehouseConf.defaultTasksIndexName_*/
-		String indices = conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_TASKS_NAME);
-		//System.out.println(indices);
-		LOGGER.info("Getting tasks from index:" + indices);
-		SearchRequestBuilder seaerchreqbuilder = acccessor_.getClient().prepareSearch(indices )
-				.setTypes(conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_TASKS_TYPE) )
+		SearchRequestBuilder seaerchreqbuilder = acccessor_.getClient().prepareSearch(conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_TASKS_NAME) /*ElasticWarehouseConf.defaultTasksIndexName_*/)
+				.setTypes(conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_TASKS_TYPE) /*ElasticWarehouseConf.defaultTasksTypeName_*/)
 		        //.setSearchType(SearchType.SCAN)
 		        .setSearchType(SearchType.DFS_QUERY_THEN_FETCH);
 		        //.setScroll(new TimeValue(60000));
@@ -126,12 +121,12 @@ public class ElasticWarehouseTasksManager {
 	}
 	public LinkedList<String> getTasks(Boolean finished, String nodename, int size, int from, boolean showrequest, boolean allnodes)
 	{   
-		try{
+		//try{
 			return getTasks(finished, nodename, size, from, showrequest, allnodes, null);
-		}catch(IndexNotFoundException e){
-			LOGGER.error(e.getMessage());
-			return new LinkedList<String>();
-		}
+		//}catch(IndexNotFoundException e){
+		//	LOGGER.error(e.getMessage());
+		//	return new LinkedList<String>();
+		//}
 	}
 	
 	public boolean markNotFinishedTasksAsCancelled()

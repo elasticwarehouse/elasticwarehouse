@@ -31,7 +31,7 @@ import org.elasticsearch.client.Client;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.index.IndexNotFoundException;
+//import org.elasticsearch.index.IndexNotFoundException;
 import org.elasticsearch.rest.RestChannel;
 import org.elasticsearch.rest.RestController;
 import org.elasticsearch.rest.RestRequest;
@@ -74,7 +74,7 @@ public class ElasticWarehouseUpload extends ElasticWarehouseRestHandler {
         try {
 			processor_.processRequest(client, os, params);
 		}
-        catch(IndexNotFoundException e){
+        catch(org.elasticsearch.indices.IndexMissingException e){
         	elasticSearchAccessor_.recreateTemplatesAndIndices(false);
         	retryRequest = true;
 		}

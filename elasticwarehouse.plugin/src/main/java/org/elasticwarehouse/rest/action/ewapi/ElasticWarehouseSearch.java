@@ -21,16 +21,18 @@ package org.elasticwarehouse.rest.action.ewapi;
 
 
 import org.eclipse.jetty.util.IO;
+import org.elasticsearch.ElasticsearchIllegalArgumentException;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.Strings;
+import org.elasticsearch.common.base.Joiner;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentBuilder;
-import org.elasticsearch.index.IndexNotFoundException;
+//import org.elasticsearch.index.IndexNotFoundException;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.QueryStringQueryBuilder;
 import org.elasticsearch.rest.*;
@@ -93,7 +95,7 @@ public class ElasticWarehouseSearch extends ElasticWarehouseRestHandler {
         try {
 			processor_.processRequest(client, os, "POST", false, params);
 		}
-        catch(IndexNotFoundException e){
+        catch(org.elasticsearch.indices.IndexMissingException e){
         	elasticSearchAccessor_.recreateTemplatesAndIndices(false);
         	retryRequest = true;
 		}

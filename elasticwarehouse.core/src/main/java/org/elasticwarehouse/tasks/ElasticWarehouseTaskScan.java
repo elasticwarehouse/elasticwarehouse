@@ -201,11 +201,11 @@ public class ElasticWarehouseTaskScan extends ElasticWarehouseTask {
 	        			indexTask();
 	        	}
 	        	return true;
-			} catch( java.security.AccessControlException e) {
-				EWLogger.logerror(e);
-				e.printStackTrace();
-				processingErrors_.add(processingFilename_ + " : " + e.getMessage() + 
-						". To fix it: 1) Please check read access to provided location 2) edit <jre location>/lib/security/java.policy to allow web application access a folder outside its deployment directory by adding line: permission java.io.FilePermission \"/path/-\", \"read\";");
+			//} catch( java.security.AccessControlException e) {
+			//	EWLogger.logerror(e);
+			//	e.printStackTrace();
+			//	processingErrors_.add(processingFilename_ + " : " + e.getMessage() + 
+			//			". To fix it: 1) Please check read access to provided location 2) edit <jre location>/lib/security/java.policy to allow web application access a folder outside its deployment directory by adding line: permission java.io.FilePermission \"/path/-\", \"read\";");
 			} catch (IOException e) {
 				EWLogger.logerror(e);
 				e.printStackTrace();

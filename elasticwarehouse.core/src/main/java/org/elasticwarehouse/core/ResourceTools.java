@@ -126,7 +126,7 @@ public class ResourceTools {
         String fileContent = null;
 		try {
 			//System.out.println(resourceId.toURI());
-			InputStream in = ResourceTools.class.getResourceAsStream(resourceFile);
+			InputStream in = ResourceTools.class.getClass().getResourceAsStream(resourceFile);
 			if( in == null ) {
 				LOGGER.error("Cannot access resource file " + resourceFile + " ("+resourceId+")");
 			}else

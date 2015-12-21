@@ -41,7 +41,7 @@ import org.elasticwarehouse.core.EWLogger;
 
 public class FileTools {
 
-	public static LinkedList<FileDef> scanFolder(String path, List<String> excluded_extenstions, boolean isrecurrence) throws java.security.AccessControlException
+	public static LinkedList<FileDef> scanFolder(String path, List<String> excluded_extenstions, boolean isrecurrence)
 	{
 		if( isrecurrence )
 		{
@@ -74,7 +74,7 @@ public class FileTools {
 		}
 	}
 	
-	public static LinkedList<FileDef> scanFolder(String path, List<String> excluded_extenstions) throws java.security.AccessControlException
+	public static LinkedList<FileDef> scanFolder(String path, List<String> excluded_extenstions)
 	{
 		LinkedList<FileDef> ret = new LinkedList<FileDef>();
 		File folder = new File(path);

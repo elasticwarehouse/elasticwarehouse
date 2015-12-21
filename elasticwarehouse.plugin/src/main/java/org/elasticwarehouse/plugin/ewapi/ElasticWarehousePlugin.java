@@ -19,8 +19,8 @@
  ****************************************************************/
 package org.elasticwarehouse.plugin.ewapi;
 
-import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.plugins.Plugin;
+import org.elasticsearch.common.inject.Module;
+import org.elasticsearch.plugins.AbstractPlugin;
 //import org.elasticsearch.common.inject.Module;
 //import org.elasticsearch.plugins.AbstractPlugin;
 import org.elasticsearch.rest.RestModule;
@@ -33,10 +33,12 @@ import org.elasticwarehouse.rest.action.ewapi.ElasticWarehouseSummary;
 import org.elasticwarehouse.rest.action.ewapi.ElasticWarehouseTask;
 import org.elasticwarehouse.rest.action.ewapi.ElasticWarehouseUpload;
 
+import java.util.Collection;
+
+import org.elasticsearch.common.collect.Lists;
 
 
-
-public class ElasticWarehousePlugin extends Plugin {
+public class ElasticWarehousePlugin extends AbstractPlugin {
 
 	//private final Settings settings;
 
@@ -51,37 +53,7 @@ public class ElasticWarehousePlugin extends Plugin {
     public String description() {
         return "Elastic Warehouse Plugin";
     }
-    
-    // for Rest API
-    public void onModule(final RestModule restModule) {
-        restModule.addRestAction(ElasticWarehouseSearchAll.class);
-        restModule.addRestAction(ElasticWarehouseSearch.class);
-        restModule.addRestAction(ElasticWarehouseUpload.class);
-        restModule.addRestAction(ElasticWarehouseGet.class);
-        restModule.addRestAction(ElasticWarehouseSummary.class);
-        restModule.addRestAction(ElasticWarehouseBrowse.class);
-        restModule.addRestAction(ElasticWarehouseInfo.class);
-        restModule.addRestAction(ElasticWarehouseTask.class);
-    }
 	
-	// for Service
-   /* @Override
-    public Collection<Module> nodeModules() {
-        final Collection<Module> modules =new ArrayList<>();
-        modules.add(new ReindexingModule());
-        return modules;
-    }
-
-    // for Service
-    @Override
-    public Collection<Class<? extends LifecycleComponent>> nodeServices() {
-        final Collection<Class<? extends LifecycleComponent>> services = new ArrayList<>();
-        services.add(ReindexingService.class);
-        return services;
-    }*/
-	
-	//ES 1.x
-	/*
 	@Override public void processModule(Module module) {
         if (module instanceof RestModule) {
             ((RestModule) module).addRestAction(ElasticWarehouseSearchAll.class);
@@ -107,5 +79,5 @@ public class ElasticWarehousePlugin extends Plugin {
         if (module instanceof RestModule) {
             ((RestModule) module).addRestAction(ElasticWarehouseTask.class);
         }
-    }*/
+    }
 }
