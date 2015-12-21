@@ -1042,8 +1042,8 @@ public class ElasticSearchAccessor
             //NodeInfo info = nodesInfo.getNodesMap().get(node.id());
             NodeStats stats = nodesStats.getNodesMap().get(node.id());
             
-            short heapusedpercent = (stats == null ? -1 : stats.getJvm().getMem().getHeapUsedPercent());
-            double loadvg = (stats == null ? -1.0 : stats.getOs() == null ? -1.0 : stats.getOs().getLoadAverage() < 1 ? -1.0 : stats.getOs().getLoadAverage() );
+            short heapusedpercent = (stats == null ? -1 : stats.getJvm().getMem().getHeapUsedPrecent());
+            double loadvg = (stats == null ? -1.0 : stats.getOs() == null ? -1.0 : stats.getOs().getLoadAverage().length < 1 ? -1.0 : stats.getOs().getLoadAverage()[0] );
             short memusedpercent = (stats == null ? -1 : stats.getOs().getMem() == null ? -1 : stats.getOs().getMem().getUsedPercent());
             String nodename = node.name();
             
