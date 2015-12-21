@@ -55,10 +55,11 @@ public class ElasticWarehouseFileParserAuto extends ElasticWarehouseFileParser{
 	
 	public boolean parse() throws IOException
 	{
+		boolean ret = false;
 		InputStream is = null;
 		file.statParse();
         try {
-        	LOGGER.info("Parsing " + file.getOrginalFname());
+        	LOGGER.info("Parsing " + file.getOrginalFname() + " ("+file.getUploadedFilename()+")" );
             is = new BufferedInputStream(new FileInputStream(new File(file.getUploadedFilename())));
  
             Parser parser = new AutoDetectParser();
@@ -77,27 +78,37 @@ public class ElasticWarehouseFileParserAuto extends ElasticWarehouseFileParser{
             parser.parse(is, handler/*handler*/, metadata, parseContext);
             
             file.fill(metadata, output.toString());
-            
+            ret = true;
             
         } catch (IOException e) {
         	EWLogger.logerror(e);
-			e.printStackTrace();				
-            
+        	e.printStackTrace();				
+        } catch (java.lang.ExceptionInInitializerError e) {
+        	EWLogger.logerror(e);
+        	e.printStackTrace();	
         } catch (TikaException e) {
         	Exception e2 = (Exception) ExceptionUtils.getRootCause(e);
         	if (e2 instanceof UnsupportedZipFeatureException) {
 				//do nothing, format unsupported
+        		ret = true;
 			}else if( e2 instanceof EncryptedPowerPointFileException){
 				//do nothing, format unsupported
+				ret = true;
 			}else if( e instanceof org.apache.tika.exception.EncryptedDocumentException){
 				//do nothing, format unsupported
+				ret = true;
 			}else if( e2 instanceof org.apache.poi.EncryptedDocumentException){
 				//do nothing, format unsupported
+				ret = true;
 			}else if( e2 instanceof org.apache.tika.exception.EncryptedDocumentException){
 				//do nothing, format unsupported
+				ret = true;
 			}else{
 				EWLogger.logerror(e);
 				e.printStackTrace();
+				
+				//i.e. for org.apache.tika.exception.TikaException: cannot parse detached pkcs7 signature (no signed data to parse)
+				ret = true;
 			}
         } catch (SAXException e) {
         	EWLogger.logerror(e);
@@ -133,6 +144,6 @@ public class ElasticWarehouseFileParserAuto extends ElasticWarehouseFileParser{
 	    finally {
 	        if (is != null) is.close();
 	    }*/
-	    return true;
+	    return ret;
 	}
 }

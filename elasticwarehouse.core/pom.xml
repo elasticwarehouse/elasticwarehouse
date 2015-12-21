@@ -74,9 +74,12 @@
 			  </execution>
 			</executions>
 			<configuration>
-				<descriptorRefs>
+				<descriptors>
+					<descriptor>${basedir}/assembly.xml</descriptor>
+				</descriptors>
+				<!--<descriptorRefs>
 					<descriptorRef>jar-with-dependencies</descriptorRef>
-				</descriptorRefs>
+				</descriptorRefs>-->
 				<excludes>
 					<exclude>**/elasticwarehouse.yml</exclude>
 					<exclude>**/elasticsearch.yml</exclude>
@@ -92,7 +95,7 @@
 						</excludes>
 					</fileSet> 
 				</fileSets>
-			</configuration>
+				<!-- <outputDirectory>${project.build.directory}/elasticwarehouse/elasticwarehouse/${version}/</outputDirectory> -->			</configuration>
 		</plugin>
 		<plugin>
              <artifactId>maven-antrun-plugin</artifactId>
@@ -148,6 +151,12 @@
 </build>
 
   <dependencies>
+<dependency>
+	<groupId>org.ow2.asm</groupId>
+	<artifactId>asm</artifactId>
+	<version>4.1</version>	
+<scope>runtime</scope>	
+</dependency>
 		<dependency>
 			<groupId>commons-io</groupId>
 			<artifactId>commons-io</artifactId>
@@ -210,16 +219,22 @@
 			<artifactId>groovy-all</artifactId>
 			<scope>provided</scope>			<version>2.3.2</version>
 		</dependency>	
+
 		<dependency>
 			<groupId>org.apache.tika</groupId>
 			<artifactId>tika-core</artifactId>
-			<version>1.7</version>
+			<version>1.11</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.tika</groupId>
 			<artifactId>tika-parsers</artifactId>
-			<version>1.7</version>
+			<version>1.11</version>
 		</dependency>
+<dependency>
+	<groupId>org.apache.poi</groupId>
+	<artifactId>poi</artifactId>
+	<version>3.13</version>
+</dependency>
 	 <!-- 	<dependency>
 			<groupId>org.eclipse.jetty</groupId>
 			<artifactId>jetty-rewrite</artifactId>

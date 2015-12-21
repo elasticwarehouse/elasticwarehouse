@@ -63,7 +63,8 @@ REM JAVA_OPTS=%JAVA_OPTS% -XX:HeapDumpPath=$EW_HOME/logs/heapdump.hprof
 REM Disables explicit GC
 set JAVA_OPTS=%JAVA_OPTS% -XX:+DisableExplicitGC
 
-set ES_CLASSPATH=%ES_CLASSPATH%;%EW_HOME%/lib/elasticwarehouse.core*.jar;%EW_HOME%/lib/*
+REM 1.x -> set ES_CLASSPATH=%ES_CLASSPATH%;%EW_HOME%/lib/elasticwarehouse.core*.jar;%EW_HOME%/lib/*
+set ES_CLASSPATH=%EW_HOME%/lib/*
 set ES_PARAMS=-Delasticwarehouse -Dew.path.home="%EW_HOME%" -Duser.dir="%EW_HOME%\bin"
 
 goto finally

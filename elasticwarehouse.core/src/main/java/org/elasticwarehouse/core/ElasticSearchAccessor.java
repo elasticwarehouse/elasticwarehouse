@@ -159,23 +159,27 @@ public class ElasticSearchAccessor
 		myNodeName_ = conf_.getNodeName();// NetworkTools.getHostName().toUpperCase();
 		embedded_ = conf_.getWarehouseBoolValue(ElasticWarehouseConf.MODEEMBEDDED, true);
 		
-		//TODO Liteshell; why ShutdownHook has been disabled?
-		
-		Runtime.getRuntime().addShutdownHook(new Thread() {
-            @Override
-            public void run() {
-            	LOGGER.info("Client is stopping....");
-            	if( client_ != null )
-            		client_.close();
-            	if( node_ != null )
-            	{
-					//node_.stop();    //if started then stop() will be called anyway, ES2.x experiment        		
-					node_.close();
-            	}
-            	LOGGER.info("Client stopped");
-            }
-        });
-		
+		try
+		{
+			Runtime.getRuntime().addShutdownHook(new Thread() {
+			    @Override
+			    public void run() {
+			    	LOGGER.info("Client is stopping....");
+			    	if( client_ != null )
+			    		client_.close();
+			    	if( node_ != null )
+			    	{
+							//node_.stop();    //if started then stop() will be called anyway, ES2.x experiment        		
+							node_.close();
+			    	}
+			    	LOGGER.info("Client stopped");
+			    }
+			});
+		}
+		catch(java.security.AccessControlException e)
+		{
+			//this code is running in plugin mode
+		}
 		if( embedded_ )
 			hostPort_ = determineNodeRestPoint();
 		
@@ -196,7 +200,8 @@ public class ElasticSearchAccessor
 		applyTemplates();
 		createIndex(conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_STORAGE_NAME) /*ElasticWarehouseConf.defaultIndexName_*/);
 		createIndex(conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_TASKS_NAME) /*ElasticWarehouseConf.defaultTasksIndexName_*/);
-		
+		createIndex(conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_UPLOADS_NAME) );
+
 		if( includeGrafana && indexExists("grafana-dash") == false )
 		{
 			createIndex("grafana-dash");
@@ -963,6 +968,8 @@ public class ElasticSearchAccessor
 				fos.write(bytes);
 				fos.close();
 				atid++;*/
+			}else{
+				LOGGER.error("**** Cannot parse " + path+"/"+file);
 			}
 		} catch (IOException e) {
 			EWLogger.logerror(e);

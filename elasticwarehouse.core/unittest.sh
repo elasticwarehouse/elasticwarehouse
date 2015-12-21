@@ -110,8 +110,8 @@ function executetask()
 	local progress=`echo $RET | jq -r '.progress'`
 	LAST_TASK_ID=$taskid
 	LAST_TASK_PROGRESS=$progress
-	#echo $errorcode
-	#echo $RET
+	echo $errorcode
+	echo $RET
 	if [ $errorcode -eq 0 ]; then
 		showok "$1"
 	elif [ $errorcode -eq 60 ]; then

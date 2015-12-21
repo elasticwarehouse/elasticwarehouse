@@ -126,11 +126,16 @@ public class ResourceTools {
         String fileContent = null;
 		try {
 			//System.out.println(resourceId.toURI());
-			InputStream in = ResourceTools.class.getClass().getResourceAsStream(resourceFile);
-			byte[] data = IOUtils.toByteArray(in);
-			//resPath = java.nio.file.Paths.get(resourceId.toURI());
-			fileContent = new String(data, "UTF-8");//new String(java.nio.file.Files.readAllBytes(resPath), "UTF8");
-			//System.out.println(fileContent);
+			InputStream in = ResourceTools.class.getResourceAsStream(resourceFile);
+			if( in == null ) {
+				LOGGER.error("Cannot access resource file " + resourceFile + " ("+resourceId+")");
+			}else
+			{
+				byte[] data = IOUtils.toByteArray(in);
+				//resPath = java.nio.file.Paths.get(resourceId.toURI());
+				fileContent = new String(data, "UTF-8");//new String(java.nio.file.Files.readAllBytes(resPath), "UTF8");
+				//System.out.println(fileContent);
+			}
 		/*} catch (URISyntaxException e) {
 			EWLogger.logerror(e);
 			e.printStackTrace();

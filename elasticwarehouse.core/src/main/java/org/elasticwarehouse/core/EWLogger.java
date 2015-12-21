@@ -55,4 +55,10 @@ public class EWLogger {
 		
 	}
 
+	public static void logerror(ExceptionInInitializerError e) {
+		LOGGER.error(e.getMessage());
+		for(StackTraceElement elem : e.getStackTrace())
+			LOGGER.error(elem.toString());
+	}
+
 }

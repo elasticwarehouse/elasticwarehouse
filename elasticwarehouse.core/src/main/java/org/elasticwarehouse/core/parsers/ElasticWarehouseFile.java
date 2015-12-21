@@ -69,10 +69,16 @@ public class ElasticWarehouseFile {
 		conf_ = conf;
 		fname_ = fname;
 		targetfolder_ = targetfolder;
-		File f1 = new File(uploadedfilename_);
-		fsize_ = f1.length();
-		if( uploadedfilename.length() > 0 )
+		if( uploadedfilename_.length() > 0 )
+		{
+			File f1 = new File(uploadedfilename_);
+			fsize_ = f1.length();
 			binaryContent_ = Files.readAllBytes(Paths.get(uploadedfilename));
+		}
+		else
+		{
+			fsize_ = 0;
+		}
 		postProcessTargetFolder();
 	}
 	

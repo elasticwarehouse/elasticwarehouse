@@ -21,6 +21,8 @@ package org.elasticwarehouse.plugin.ewapi;
 
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.plugins.Plugin;
+//import org.elasticsearch.common.inject.Module;
+//import org.elasticsearch.plugins.AbstractPlugin;
 import org.elasticsearch.rest.RestModule;
 import org.elasticwarehouse.rest.action.ewapi.ElasticWarehouseBrowse;
 import org.elasticwarehouse.rest.action.ewapi.ElasticWarehouseGet;
@@ -36,11 +38,11 @@ import org.elasticwarehouse.rest.action.ewapi.ElasticWarehouseUpload;
 
 public class ElasticWarehousePlugin extends Plugin {
 
-	private final Settings settings;
+	//private final Settings settings;
 
-    public  ElasticWarehousePlugin(Settings settings) {
-        this.settings = settings;
-    }
+    //public  ElasticWarehousePlugin(Settings settings) {
+    //    this.settings = settings;
+    //}
 	
     public String name() {
         return "ElasticWarehouse";
@@ -50,8 +52,8 @@ public class ElasticWarehousePlugin extends Plugin {
         return "Elastic Warehouse Plugin";
     }
     
-    /* Invoked on component assembly. */
-    public void onModule(RestModule restModule) {
+    // for Rest API
+    public void onModule(final RestModule restModule) {
         restModule.addRestAction(ElasticWarehouseSearchAll.class);
         restModule.addRestAction(ElasticWarehouseSearch.class);
         restModule.addRestAction(ElasticWarehouseUpload.class);
@@ -60,5 +62,50 @@ public class ElasticWarehousePlugin extends Plugin {
         restModule.addRestAction(ElasticWarehouseBrowse.class);
         restModule.addRestAction(ElasticWarehouseInfo.class);
         restModule.addRestAction(ElasticWarehouseTask.class);
-    }    
+    }
+	
+	// for Service
+   /* @Override
+    public Collection<Module> nodeModules() {
+        final Collection<Module> modules =new ArrayList<>();
+        modules.add(new ReindexingModule());
+        return modules;
+    }
+
+    // for Service
+    @Override
+    public Collection<Class<? extends LifecycleComponent>> nodeServices() {
+        final Collection<Class<? extends LifecycleComponent>> services = new ArrayList<>();
+        services.add(ReindexingService.class);
+        return services;
+    }*/
+	
+	//ES 1.x
+	/*
+	@Override public void processModule(Module module) {
+        if (module instanceof RestModule) {
+            ((RestModule) module).addRestAction(ElasticWarehouseSearchAll.class);
+        }
+        if (module instanceof RestModule) {
+            ((RestModule) module).addRestAction(ElasticWarehouseSearch.class);
+        }
+        if (module instanceof RestModule) {
+            ((RestModule) module).addRestAction(ElasticWarehouseUpload.class);
+        }
+        if (module instanceof RestModule) {
+            ((RestModule) module).addRestAction(ElasticWarehouseGet.class);
+        }
+        if (module instanceof RestModule) {
+            ((RestModule) module).addRestAction(ElasticWarehouseSummary.class);
+        }
+        if (module instanceof RestModule) {
+            ((RestModule) module).addRestAction(ElasticWarehouseBrowse.class);
+        }
+        if (module instanceof RestModule) {
+            ((RestModule) module).addRestAction(ElasticWarehouseInfo.class);
+        }
+        if (module instanceof RestModule) {
+            ((RestModule) module).addRestAction(ElasticWarehouseTask.class);
+        }
+    }*/
 }
