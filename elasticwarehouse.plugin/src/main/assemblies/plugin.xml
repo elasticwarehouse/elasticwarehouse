@@ -1,0 +1,72 @@
+<?xml version="1.0"?>
+<assembly>
+	<id>jar-with-dependencies</id>
+
+	<formats><format>jar</format></formats>
+
+	<includeBaseDirectory>false</includeBaseDirectory>
+	<fileSets>
+    		<fileSet>
+      			<directory>${basedir}/target/classes/org</directory>
+      			<outputDirectory>org</outputDirectory>
+		</fileSet>
+	</fileSets>
+	<files>
+		<file>
+			<!--<source>${basedir}/src/main/plugin-metadata/plugin-descriptor.properties</source>-->
+			<source>${basedir}/target/classes/plugin-descriptor.properties</source>
+			<outputDirectory></outputDirectory>
+			<filtered>true</filtered>
+		</file>
+		<file>
+			<source>${basedir}/../elasticwarehouse.core/config/elasticwarehouse.yml</source>
+			<outputDirectory>config</outputDirectory>
+			<filtered>true</filtered>
+		</file>
+		<!--<file>
+			<source>${basedir}/../elasticwarehouse.core/target/elasticwarehouse.core-${elasticwarehouse.version}-${elastic.version}-jar-with-dependencies.jar</source>
+			<outputDirectory></outputDirectory>
+			<filtered>true</filtered>
+		</file>-->
+		<!--<file>
+			<source>${basedir}/target/elasticwarehouseplugin-${elasticwarehouse.version}-${elastic.version}.jar</source>
+			<outputDirectory></outputDirectory>
+			<filtered>true</filtered>
+		</file>-->
+	</files>
+	<dependencySets>
+		<dependencySet>
+			<outputDirectory>/</outputDirectory>
+			<useProjectArtifact>true</useProjectArtifact>
+		
+			<unpack>true</unpack>
+            		<scope>system</scope>
+
+			<!--<useTransitiveFiltering>true</useTransitiveFiltering>-->
+			<!--<excludes>
+				<exclude>org.elasticsearch:elasticsearch</exclude>
+				<exclude>org.codelibs:elasticsearch-cluster-runner</exclude>
+			</excludes>-->
+			<excludes>
+					<exclude>asm:asm</exclude>			<!-- provided in ES2.x lib folder -->
+				       	<exclude>org.ow2.asm:asm</exclude>		<!-- provided in ES2.x lib folder -->
+					<exclude>com.google.guava:guava</exclude>	<!-- provided in ES2.x lib folder -->
+					<exclude>joda-time:joda-time</exclude>		<!-- provided in ES2.x lib folder -->
+					<exclude>net.java.dev.jna:jna</exclude>		<!-- provided in ES2.x lib folder -->
+				    </excludes>
+
+			<includes>
+				<include>elasticwarehouse:elasticwarehouse</include>
+			</includes>
+
+		<!--<excludes>
+               	<exclude>org.ow2.asm:asm</exclude>		
+		<exclude>com.google.guava:guava</exclude>	
+		<exclude>joda-time:joda-time</exclude>		
+		<exclude>net.java.dev.jna:jna</exclude>		
+            </excludes>-->
+
+		</dependencySet>
+	</dependencySets>
+
+</assembly>
