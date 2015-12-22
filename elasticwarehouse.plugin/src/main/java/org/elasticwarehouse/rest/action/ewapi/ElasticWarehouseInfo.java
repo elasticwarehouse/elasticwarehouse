@@ -58,7 +58,7 @@ public class ElasticWarehouseInfo extends ElasticWarehouseRestHandler {
         //controller.registerHandler(GET, "/{index}/_ewsearchall", this);
         //controller.registerHandler(GET, "/{index}/{type}/_myrestpoint", this);
         //controller.registerHandler(POST, "/{index}/{type}/_myrestpoint", this);
-        tasksManager_ = new ElasticWarehouseTasksManager(elasticSearchAccessor_, conf_);
+        tasksManager_ = new ElasticWarehouseTasksManager(elasticSearchAccessor_, conf_, false);
         
         processor_ = new ElasticWarehouseAPIProcessorInfo(conf_, elasticSearchAccessor_, tasksManager_);
     }
