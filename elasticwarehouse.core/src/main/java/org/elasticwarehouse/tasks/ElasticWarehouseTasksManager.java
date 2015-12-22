@@ -45,6 +45,7 @@ import org.elasticwarehouse.core.ElasticSearchAccessor;
 import org.elasticwarehouse.core.ElasticWarehouseConf;
 import org.elasticwarehouse.core.graphite.NetworkTools;
 import org.elasticwarehouse.core.parsers.ElasticWarehouseFile;
+import org.elasticsearch.indices.IndexMissingException;
 
 public class ElasticWarehouseTasksManager {
 
@@ -53,21 +54,37 @@ public class ElasticWarehouseTasksManager {
 	private ElasticSearchAccessor acccessor_ = null;
 	private ElasticWarehouseConf conf_ = null;
 	private LinkedList<ElasticWarehouseTask> runningTasks_ = new LinkedList<ElasticWarehouseTask>();
-	
+	private boolean notFinishedTasksProcessed_ = false;
 	private int maxTasks_ = 2;
 	
-	public ElasticWarehouseTasksManager(ElasticSearchAccessor acccessor, ElasticWarehouseConf conf) 
+	public ElasticWarehouseTasksManager(ElasticSearchAccessor acccessor, ElasticWarehouseConf conf, boolean cancelNotFinishedTasks) 
 	{
 		acccessor_ = acccessor;
 		conf_ = conf;
 		
 		maxTasks_ = conf_.getWarehouseIntValue(ElasticWarehouseConf.TASKSMAXNUMBER, ElasticWarehouseConf.TASKSMAXNUMBERDEFAULT);
 		
-		boolean ret = markNotFinishedTasksAsCancelled();
-		LOGGER.info("Marking old tasks as cancelled: "+ret);
+		if( cancelNotFinishedTasks )
+			processNotFinishedTasks();
 	}
-	public LinkedList<String> getTasks(Boolean finished, String nodename, int size, int from, boolean showrequest, boolean allnodes, String correspondingFileId)
+	
+	private void processNotFinishedTasks()
 	{
+		try
+		{
+			LOGGER.info("Marking old tasks as cancelled......");
+			boolean ret = markNotFinishedTasksAsCancelled();
+			LOGGER.info("Marking old tasks as cancelled: "+ret);
+			notFinishedTasksProcessed_ = ret;
+		} catch (org.elasticsearch.indices.IndexMissingException e) {
+			acccessor_.recreateTemplatesAndIndices(true);
+		} finally {
+			//index just created, so nothing to mark as cancelled
+		}
+	}
+	
+	public LinkedList<String> getTasks(Boolean finished, String nodename, int size, int from, boolean showrequest, boolean allnodes, String correspondingFileId)
+	{	
 		LinkedList<String> ret = new LinkedList<String>();
 		SearchRequestBuilder seaerchreqbuilder = acccessor_.getClient().prepareSearch(conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_TASKS_NAME) /*ElasticWarehouseConf.defaultTasksIndexName_*/)
 				.setTypes(conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_TASKS_TYPE) /*ElasticWarehouseConf.defaultTasksTypeName_*/)
@@ -144,6 +161,9 @@ public class ElasticWarehouseTasksManager {
 	}
 	private void checkCurrentlyRunningTasks() throws IOException
 	{
+		if( !notFinishedTasksProcessed_ )
+			processNotFinishedTasks();
+		
 		LinkedList<String> tasks = getTasks(false, conf_.getNodeName() /*NetworkTools.getHostName()*/, 1000, 0, false, false);
 		int cnt = tasks.size();
 		for(String tskid : tasks)
@@ -164,7 +184,7 @@ public class ElasticWarehouseTasksManager {
 			throw new IOException("Max tasks limit ("+maxTasks_+") has been reached.");
 	}
 	public synchronized ElasticWarehouseTask launchScan(String path, String targetfolder /*nullable*/, boolean brecurrence) throws IOException
-	{
+	{	
 		checkCurrentlyRunningTasks();
 		
 		ElasticWarehouseTaskScan task = new ElasticWarehouseTaskScan(acccessor_, conf_, path, targetfolder, brecurrence); 
@@ -199,6 +219,9 @@ public class ElasticWarehouseTasksManager {
 
 	public ElasticWarehouseTask getTask(String taskId)
 	{
+		if( !notFinishedTasksProcessed_ )
+			processNotFinishedTasks();
+		
 		GetResponse response = acccessor_.getClient().prepareGet(conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_TASKS_NAME) /*ElasticWarehouseConf.defaultTasksIndexName_*/, 
 				conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_TASKS_TYPE) /*ElasticWarehouseConf.defaultTasksTypeName_*/,  taskId)
 		        .execute()
@@ -237,6 +260,9 @@ public class ElasticWarehouseTasksManager {
 
 	public ElasticWarehouseTask createFolder(String folder)
 	{
+		if( !notFinishedTasksProcessed_ )
+			processNotFinishedTasks();
+		
 		ElasticWarehouseTaskMkdir task = new ElasticWarehouseTaskMkdir(acccessor_, conf_, folder);
 		task.start();		
 		String taskId = task.indexTask();
@@ -246,6 +272,9 @@ public class ElasticWarehouseTasksManager {
 
 	public ElasticWarehouseTask removeFolder(String folder)
 	{
+		if( !notFinishedTasksProcessed_ )
+			processNotFinishedTasks();
+		
 		ElasticWarehouseTaskRmdir task = new ElasticWarehouseTaskRmdir(acccessor_, conf_, folder);
 		task.start();		
 		String taskId = task.indexTask();
@@ -253,7 +282,11 @@ public class ElasticWarehouseTasksManager {
 		return task;
 	}
 
-	public ElasticWarehouseTask moveTo(String id, String folder) {
+	public ElasticWarehouseTask moveTo(String id, String folder)
+	{
+		if( !notFinishedTasksProcessed_ )
+			processNotFinishedTasks();
+		
 		ElasticWarehouseTaskMove task = new ElasticWarehouseTaskMove(acccessor_, conf_, id, folder);
 		task.start();		
 		String taskId = task.indexTask();
@@ -263,6 +296,9 @@ public class ElasticWarehouseTasksManager {
 
 	public ElasticWarehouseTask delete(String id) 
 	{
+		if( !notFinishedTasksProcessed_ )
+			processNotFinishedTasks();
+		
 		ElasticWarehouseTaskDelete task = new ElasticWarehouseTaskDelete(acccessor_, conf_, id);
 		task.start();		
 		String taskId = task.indexTask();
@@ -298,7 +334,11 @@ public class ElasticWarehouseTasksManager {
 		return task;
 	}
 
-	public LinkedList<String> getRunningTasks() {
+	public LinkedList<String> getRunningTasks()
+	{
+		if( !notFinishedTasksProcessed_ )
+			processNotFinishedTasks();
+		
 		LinkedList<String> ret = new LinkedList<String>();
 		for (ElasticWarehouseTask tsk : runningTasks_) {
 			ret.add(tsk.taskId_);

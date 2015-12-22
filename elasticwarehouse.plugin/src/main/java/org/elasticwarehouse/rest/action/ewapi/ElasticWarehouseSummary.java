@@ -67,7 +67,7 @@ public class ElasticWarehouseSummary extends ElasticWarehouseRestHandler {
     {
     	logger.debug("_ewsummary called");
     	if( tasksManager_ == null )
-    		tasksManager_ = new ElasticWarehouseTasksManager(elasticSearchAccessor_, conf_);
+    		tasksManager_ = new ElasticWarehouseTasksManager(elasticSearchAccessor_, conf_, false);
     	if( processor_ == null )
     		processor_ = new ElasticWarehouseAPIProcessorSummary(conf_, elasticSearchAccessor_, tasksManager_);
     	

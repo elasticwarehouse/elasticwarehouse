@@ -52,7 +52,7 @@ public class ElasticWarehouseServerAPI {
 		{
 			try
 			{
-				tasksManager_ = new ElasticWarehouseTasksManager(acccessor_, conf);
+				tasksManager_ = new ElasticWarehouseTasksManager(acccessor_, conf, true);
 				break;
 			}
 			catch(org.elasticsearch.action.search.SearchPhaseExecutionException e)

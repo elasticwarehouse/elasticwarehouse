@@ -66,7 +66,7 @@ public class ElasticWarehouseTask extends ElasticWarehouseRestHandler {
     {
     	logger.debug("_ewtask called");
     	if( tasksManager_ == null )
-    		tasksManager_ = new ElasticWarehouseTasksManager(elasticSearchAccessor_, conf_);
+    		tasksManager_ = new ElasticWarehouseTasksManager(elasticSearchAccessor_, conf_, false);
     	if( processor_ == null )
     		processor_ = new ElasticWarehouseAPIProcessorTask( tasksManager_, conf_);
     	
