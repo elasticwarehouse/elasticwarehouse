@@ -2,7 +2,7 @@
 elasticwarehouse
 
 ElasticWarehouse is distributed in two versions:
- * Standalone version (can be configurable 
+ * Standalone ElasticSearch version (can act as ElasticSearch node or be a gateway API to ElasticSearch cluster - Embedded vs Remote configuration) 
  * As a form of ElasticSearch plugin
  
 Sample installation for ElasticSearch 1.x (i.e. 1.7.1)
