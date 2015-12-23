@@ -1,7 +1,7 @@
 # elasticwarehouse
 
-ElasticWarehouse is distributed in two versions:
- * Standalone ElasticSearch version (can act as ElasticSearch node or be an API gateway to ElasticSearch cluster - Embedded vs Remote configuration) 
+ElasticWarehouse is available in two versions:
+ * Standalone ElasticWarehouse version (can act as ElasticSearch node or be an API gateway to ElasticSearch cluster - Embedded vs Remote configuration) 
  * As a form of ElasticSearch plugin
 
 ###Sample ElasticWarehouse standalone installation
@@ -31,6 +31,9 @@ ElasticWarehouse is distributed in two versions:
     NOTE: Unable to verify checksum for downloaded plugin (unable to find .sha1 or .md5 file to verify)
     Installed elasticwarehouseplugin into /opt/elasticsearch-2.1.0/plugins/elasticwarehouseplugin
 
-More information you can find in REDME file (https://github.com/elasticwarehouse/elasticwarehouse/blob/master/elasticwarehouse.core/README.md) and on project website http://elasticwarehouse.org
+More information you can find in [README](https://github.com/elasticwarehouse/elasticwarehouse/blob/master/elasticwarehouse.core/README.md) file and on project website http://elasticwarehouse.org
 
 Common plugin installation issues: http://elasticwarehouse.org/elasticwarehouse-plugin-installation-known-issues/
+
+More information about ElasticWarehouse integration with your applications can be found here: http://elasticwarehouse.org/guide-api/
+
