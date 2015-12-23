@@ -1,5 +1,4 @@
 # elasticwarehouse
-elasticwarehouse
 
 ElasticWarehouse is distributed in two versions:
  * Standalone ElasticSearch version (can act as ElasticSearch node or be a gateway API to ElasticSearch cluster - Embedded vs Remote configuration) 
