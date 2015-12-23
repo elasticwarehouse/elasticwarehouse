@@ -7,10 +7,10 @@ ElasticWarehouse is distributed in two versions:
  
 Sample installation for ElasticSearch 1.x (i.e. 1.7.1)
 
-    plugin -install elasticwarehouseplugin -u http://elasticwarehouse.org/download.php?fname=elasticsearch-elasticwarehouseplugin-1.2.2-1.7.0-with-dependencies.zip
+    plugin -install elasticwarehouseplugin -u http://elasticwarehouse.org/download.php?fname=elasticsearch-elasticwarehouseplugin-1.2.3-1.7.1-with-dependencies.zip
 
     -> Installing elasticwarehouseplugin...
-    Trying http://elasticwarehouse.org/download.php?fname=elasticsearch-elasticwarehouseplugin-1.2.2-1.7.0-with-dependencies.zip...
+    Trying http://elasticwarehouse.org/download.php?fname=elasticsearch-elasticwarehouseplugin-1.2.3-1.7.1-with-dependencies.zip...
     Downloading ..................................................................DONE
     Installed elasticwarehouseplugin into /opt/elasticsearch-1.7.1/plugins/elasticwarehouseplugin
 
