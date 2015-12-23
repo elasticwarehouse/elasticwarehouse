@@ -38,7 +38,9 @@ import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
 import org.elasticwarehouse.core.ElasticSearchAccessor;
 import org.elasticwarehouse.core.ElasticWarehouseConf;
-import org.elasticsearch.indices.IndexMissingException;
+//import org.elasticsearch.indices.IndexMissingException;
+import org.elasticsearch.index.IndexNotFoundException;
+
 
 public class ElasticWarehouseTasksManager {
 
@@ -69,7 +71,7 @@ public class ElasticWarehouseTasksManager {
 			boolean ret = markNotFinishedTasksAsCancelled();
 			LOGGER.info("Marking old tasks as cancelled: "+ret);
 			notFinishedTasksProcessed_ = ret;
-		} catch (org.elasticsearch.indices.IndexMissingException e) {
+		} catch (IndexNotFoundException e) {
 			acccessor_.recreateTemplatesAndIndices(true);
 		} finally {
 			//index just created, so nothing to mark as cancelled
