@@ -89,11 +89,15 @@ public class ElasticWarehouseAPIProcessorTask
 			
 			keepalive = orgrequest.paramAsBoolean("keepalive", keepalive);
 			newerthan = ParseTools.isDate(orgrequest.param("newerthan") );
-			if( newerthan == null )
+			if( orgrequest.param("newerthan") != null && newerthan == null )
 			{
-				Long timestamp = Long.parseLong( orgrequest.param("newerthan") );
-				if( timestamp != null )
-					newerthan = new Date(timestamp*1000);
+				try{
+					Long timestamp = Long.parseLong( orgrequest.param("newerthan") );
+					if( timestamp != null )
+						newerthan = new Date(timestamp*1000);
+				}catch(java.lang.NumberFormatException e){
+					
+				}
 			}
 			
 			
@@ -133,9 +137,13 @@ public class ElasticWarehouseAPIProcessorTask
 					newerthan = ParseTools.isDate(pair.getValue() );
 					if( newerthan == null )
 					{
-						Long timestamp = Long.parseLong( pair.getValue() );
-						if( timestamp != null )
-							newerthan = new Date(timestamp*1000);
+						try{
+							Long timestamp = Long.parseLong( pair.getValue() );
+							if( timestamp != null )
+								newerthan = new Date(timestamp*1000);
+						}catch(java.lang.NumberFormatException e){
+							
+						}
 					}
 				}
 				else if( pair.getName().equals("targetname") )
