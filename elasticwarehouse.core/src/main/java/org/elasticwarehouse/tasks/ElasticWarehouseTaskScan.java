@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -54,13 +55,18 @@ public class ElasticWarehouseTaskScan extends ElasticWarehouseTask {
 	ArrayList<String> processingErrors_ = new ArrayList<String>();
 	int scannedFiles_ = 0;
 	
+	private boolean keepalive_ = false;
+	private Date newerthan_ = null;
 	
-	public ElasticWarehouseTaskScan(ElasticSearchAccessor acccessor, ElasticWarehouseConf conf, String path, String targetfolder/*nullable*/, boolean brecurrence) {
+	public ElasticWarehouseTaskScan(ElasticSearchAccessor acccessor, ElasticWarehouseConf conf, String path, String targetfolder/*nullable*/, 
+			boolean brecurrence, boolean keepalive, Date newerthan) {
 		super(acccessor, conf);
 		path_ = path;
 		conf_ = conf;
 		targetfolder_ = targetfolder;
 		recurrence_ = brecurrence;
+		keepalive_ = keepalive;
+		newerthan_ = newerthan;
 	}
 	
 	public ElasticWarehouseTaskScan(ElasticSearchAccessor acccessor, ElasticWarehouseConf conf, Map<String, Object> source)
@@ -73,6 +79,10 @@ public class ElasticWarehouseTaskScan extends ElasticWarehouseTask {
 		scannedFiles_ = Integer.parseInt(source.get("scannedfiles").toString());
 		if( source.get("processingerrors") != null )
 			processingErrors_ = (ArrayList<String>)source.get("processingerrors");
+		keepalive_ = Boolean.parseBoolean(source.get("keepalive").toString());
+		if( source.get("newerthan") != null )
+			newerthan_ = ParseTools.isDate(source.get("newerthan").toString());
+		
 		conf_ = conf;
 	}
 
@@ -93,6 +103,8 @@ public class ElasticWarehouseTaskScan extends ElasticWarehouseTask {
 		builder.field("path", path_)
 		       .field("targetfolder", targetfolder_)
 		       .field("recurrence", recurrence_)
+		       .field("keepalive", keepalive_)
+		       .field("newerthan", (newerthan_==null?newerthan_:df.format(newerthan_)))
 		       .field("scannedfiles", scannedFiles_);
 		if( processingErrors_.size() > 0 )
 		{
@@ -107,18 +119,38 @@ public class ElasticWarehouseTaskScan extends ElasticWarehouseTask {
 	{
 		th_ = new Thread() {
 		    public void run() {
-		        LOGGER.info("Starting scan " + path_ + "["+ taskId_ +"] to "+ targetfolder_);
-				boolean ret = scanFolder(recurrence_);
-				if( ret )
-				{
-					LOGGER.info("OK, scan " + path_ + " finished with code:" + errorcode_ +" ("+comment_+")");
-				}else{
-					LOGGER.error("ERROR, scan " + path_ + " finished with code:" + errorcode_+" ("+comment_+")");
+		    	
+		    	ScanResult ret = null;
+		    	for(;;)
+		    	{
+			        LOGGER.info("Starting scan " + path_ + "["+ taskId_ +"] to "+ targetfolder_);
+					ret = scanFolder(recurrence_, newerthan_);
 					
-				}
-				
+					if( ret.rc )
+					{
+						LOGGER.info("OK, scan " + path_ + " finished with code:" + errorcode_ +" ("+comment_+")");
+					}else{
+						LOGGER.error("ERROR, scan " + path_ + " finished with code:" + errorcode_+" ("+comment_+")");
+						
+					}
+					if( keepalive_ )
+					{
+						if( ret.lastModifyDate > 0 )
+							newerthan_ = new Date(ret.lastModifyDate);	//lastModifyDate returned by scanFolder is a number of milliseconds, so there is no need to multiply it by 1000
+						progress_ = 99;
+						indexTask();
+						try {
+							int slp = conf_.getWarehouseIntValue(ElasticWarehouseConf.ES_KEEP_ALIVE_SLEEP, 30000);
+							Thread.sleep(slp);
+						} catch (InterruptedException e) {
+							e.printStackTrace();
+						}
+					}else{
+						break;
+					}
+		    	}
 				setFinished();
-				if( ret )
+				if( ret.rc )
 					progress_ = 100;
 				else
 					errorcode_ = ERROR_TASK_SCAN_OTHER_EXCEPTION;
@@ -129,7 +161,12 @@ public class ElasticWarehouseTaskScan extends ElasticWarehouseTask {
 		th_.start();
 	}
 
-	private boolean scanFolder(boolean isrecurrence)
+	class ScanResult
+	{
+		public boolean rc;
+		public long lastModifyDate;
+	}
+	private ScanResult scanFolder(boolean isrecurrence, Date newerthan)
 	{	 
 			//ElasticSearchAccessor tmpAccessor = new ElasticSearchAccessor(c);
         	//String path = "/home/streamsadmin/workspaceE/elasticwarehouse.core/src/test/resources/";
@@ -139,7 +176,9 @@ public class ElasticWarehouseTaskScan extends ElasticWarehouseTask {
         	//																"Res2.jpg",
         	//																"UsageDataToES.vsd",*/
         	//																"ResearchStatistics.doc"));
-        	
+			ScanResult scanresult = new ScanResult();
+			scanresult.lastModifyDate = 0;
+			scanresult.rc = false;
 			String processingFilename_ = "";
 			try
 			{
@@ -152,11 +191,13 @@ public class ElasticWarehouseTaskScan extends ElasticWarehouseTask {
 				String extlist = conf_.getWarehouseValue(ElasticWarehouseConf.EXCLUDE_FILES_LIST);
 				List<String> excluded_extensions = Arrays.asList( extlist.split(" ") );
 				
-				LinkedList<FileDef> files = FileTools.scanFolder(path_, excluded_extensions, isrecurrence);
-				scannedFiles_ = files.size();
+				LinkedList<FileDef> files = FileTools.scanFolder(path_, excluded_extensions, isrecurrence, newerthan);
+				scannedFiles_ += files.size();
 				
 				for(FileDef file : files)
 				{
+					if( newerthan != null )
+						scanresult.lastModifyDate = Math.max(scanresult.lastModifyDate, file.lastModified_);
 					System.out.println(file.folder_ +"   ->   "+ file.fname_);
 				}
 	        	//Integer atid=1;
@@ -168,7 +209,7 @@ public class ElasticWarehouseTaskScan extends ElasticWarehouseTask {
 	        	for(FileDef file : files)
 	        	{
 	        		if( interrupt_ )
-	        			return false;
+	        			return scanresult;//false;
 	        		
 	        		processingFilename_ = file.fname_;
 	        		IndexingResponse ret = null;
@@ -185,13 +226,13 @@ public class ElasticWarehouseTaskScan extends ElasticWarehouseTask {
 	        		if( ret == null )
 	        		{
 	        			processingErrors_.add("Cannot parse "+file.folder_ +"/"+ file.fname_ +" due to unexpected error");
-	        			return false;
+	        			return scanresult;//false;
 	        		}
 	        		else if( ret.id_ == null )
 	        		{
 	        			comment_ = ret.error_;
 	        			processingErrors_.add(processingFilename_ + " : " + ret.error_);
-	        			return false;
+	        			return scanresult;//false;
 	        		}
 	        		int ss = files.size();
 	        		float pp = (float)counter/ss;
@@ -200,7 +241,9 @@ public class ElasticWarehouseTaskScan extends ElasticWarehouseTask {
 	        		if( (counter%20) == 0 && counter >0 )
 	        			indexTask();
 	        	}
-	        	return true;
+			scanresult.rc = true;
+	        	return scanresult;//true;
+
 			//} catch( java.security.AccessControlException e) {
 			//	EWLogger.logerror(e);
 			//	e.printStackTrace();
@@ -212,7 +255,7 @@ public class ElasticWarehouseTaskScan extends ElasticWarehouseTask {
 				processingErrors_.add(processingFilename_ + " : " + e.getMessage());
 			}
 			
-			return false;
+			return scanresult;//false;
 	}
 	
 	

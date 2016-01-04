@@ -19,11 +19,38 @@
  ****************************************************************/
 package org.elasticwarehouse.core;
 
+import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
+import java.security.Principal;
+import java.util.Collection;
+import java.util.Enumeration;
+import java.util.Locale;
+import java.util.Map;
+
+import javax.servlet.AsyncContext;
+import javax.servlet.DispatcherType;
+import javax.servlet.RequestDispatcher;
+import javax.servlet.ServletContext;
+import javax.servlet.ServletException;
+import javax.servlet.ServletInputStream;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import javax.servlet.http.HttpUpgradeHandler;
+import javax.servlet.http.Part;
 
 import org.apache.log4j.Logger;
+import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.ContextHandler;
+import org.elasticwarehouse.core.ElasticWarehouseAPIProcessorTask.ElasticWarehouseAPIProcessorTaskParams;
 import org.elasticwarehouse.tasks.ElasticWarehouseTasksManager;
 
 
@@ -120,6 +147,28 @@ public class ElasticWarehouseServerAPI {
 				//server.setHandler( reshandler );
 	 
 				server.start();
+				
+				String tasks = conf_.getWarehouseValue(ElasticWarehouseConf.AUTOSTART_TASKS);
+				if( tasks != null && tasks.length() >0 )
+				{
+					String[] tasksarray = tasks.split(",");
+					LOGGER.info("Processing "+tasksarray.length+" autostart commands....");
+					for(String command : tasksarray)
+					{
+						Long timestamp = System.currentTimeMillis()/1000;
+						command = command.replace("{$now}", timestamp.toString());
+						
+						ElasticWarehouseAPIProcessorTaskParams params = apihandler.taskProcessor_.createEmptyParams();
+				    	params.readFromURL(command);
+						
+				    	ByteArrayOutputStream baos = new ByteArrayOutputStream();
+				    	OutputStream os = new BufferedOutputStream(baos);
+				    	
+				    	boolean rc = apihandler.taskProcessor_.processRequest(acccessor_.getClient(), os, params);
+				    	if( !rc )
+				    		LOGGER.error("Cannot execute autostart command: " + command);
+					}
+				}
 				server.join();
 			} catch (java.net.BindException e ) {
 				EWLogger.logerror(e);

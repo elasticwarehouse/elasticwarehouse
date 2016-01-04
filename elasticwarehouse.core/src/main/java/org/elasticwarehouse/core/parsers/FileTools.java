@@ -28,7 +28,10 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Date;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -36,12 +39,15 @@ import javax.imageio.ImageIO;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.filefilter.AgeFileFilter;
+import org.apache.commons.io.filefilter.FileFilterUtils;
+import org.apache.commons.io.filefilter.IOFileFilter;
 import org.elasticwarehouse.core.EWLogger;
-
+import org.joda.time.LocalDate;
 
 public class FileTools {
 
-	public static LinkedList<FileDef> scanFolder(String path, List<String> excluded_extenstions, boolean isrecurrence)
+	public static LinkedList<FileDef> scanFolder(String path, List<String> excluded_extenstions, boolean isrecurrence, Date newerthan) throws java.security.AccessControlException
 	{
 		if( isrecurrence )
 		{
@@ -55,33 +61,46 @@ public class FileTools {
 			
 			if( directories.length == 0 )
 			{
-				return scanFolder(path, excluded_extenstions);
+				return scanFolder(path, excluded_extenstions, newerthan);
 			}
 			else
 			{
 				LinkedList<FileDef> fulllist =  new LinkedList<FileDef>();
 				for(int i=0;i<directories.length;i++)
 				{
-					LinkedList<FileDef> ret = scanFolder(path+"/"+directories[i], excluded_extenstions, isrecurrence);
+					LinkedList<FileDef> ret = scanFolder(path+"/"+directories[i], excluded_extenstions, isrecurrence, newerthan);
 					fulllist.addAll(ret);
 				}
-				LinkedList<FileDef> ret2 = scanFolder(path, excluded_extenstions);
+				LinkedList<FileDef> ret2 = scanFolder(path, excluded_extenstions, newerthan);
 				fulllist.addAll(ret2);
 				return fulllist;
 			}
 		}else{
-			return scanFolder(path, excluded_extenstions);
+			return scanFolder(path, excluded_extenstions, newerthan);
 		}
 	}
 	
-	public static LinkedList<FileDef> scanFolder(String path, List<String> excluded_extenstions)
+	public static LinkedList<FileDef> scanFolder(String path, List<String> excluded_extenstions, Date newerthan) throws java.security.AccessControlException
 	{
 		LinkedList<FileDef> ret = new LinkedList<FileDef>();
 		File folder = new File(path);
-		
-		File[] listOfFiles = folder.listFiles();
-		if( listOfFiles == null )
+		LinkedList<File> listOfFiles = new LinkedList<File>();
+
+		if( newerthan != null )
+		{
+			Iterator<File> newFiles =
+			        FileUtils.iterateFiles(folder, new AgeFileFilter(newerthan, false), null );//org.apache.commons.io.filefilter.TrueFileFilter.TRUE);
+			while (newFiles.hasNext()) { 
+				listOfFiles.add(newFiles.next()); 
+	        }		
+		}
+		else
+		{
+			listOfFiles.addAll(Arrays.asList(folder.listFiles()));
+		}
+		if( listOfFiles.size() == 0 )
 			return ret;
+
 		//return listOfFiles;
 		for(File file : listOfFiles)
 		{
@@ -98,7 +117,7 @@ public class FileTools {
 					}
 				}
 				if( !exclude )
-					ret.add(new FileDef(file.getName(), file.getParent() ) );
+					ret.add(new FileDef(file.getName(), file.getParent(), file.lastModified() ) );
 			}
 		}
 		

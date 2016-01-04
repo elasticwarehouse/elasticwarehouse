@@ -44,6 +44,10 @@ elasticsearch.index.tasks.type: tasks
 elasticsearch.index.uploads.name: elasticwarehouseuploads
 elasticsearch.index.uploads.type: uploads
 
+#autostart.tasks: uri1,uri2,uri3
+#example command:
+#autostart.tasks: _ewtask?action=scan&path=/home/user/workspace/elasticwarehouse.core/src/test/resources/&targetfolder=/home/zuko&newerthan={$now}&keepalive=true
+
 ######################## Settings for Embedded Mode ###########################
 # to change ElasticSearch configuration please modify elasticsearch.yml file
 grafana.port: 10500
@@ -63,6 +67,9 @@ exclude.files : "avi mp4 mkv"
 thumb.size : 360
 
 tasks.max.number: 2
+#sleep time in ms before next search for modified files
+tasks.keepalive.sleep: 30000
+
 store.content: true
 store.folder: "/opt/upload"
 store.movescanned: false

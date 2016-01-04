@@ -88,9 +88,7 @@ public class ElasticWarehouseRequestHandlerAPI  extends AbstractHandler{
             Request baseRequest,
             HttpServletRequest request,
             HttpServletResponse response) throws IOException, ServletException {
-		
-		
-		
+				
 	    //InputStream in=request.getInputStream();
 	    //byte[] b=("read=" + in.read() + "\n").getBytes(StringUtil.__UTF8);
 	    //response.setContentLength(b.length);

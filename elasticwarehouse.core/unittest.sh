@@ -202,6 +202,18 @@ function waitfortask()
 	showinfo "Task finished, progress: $LAST_TASK_PROGRESS"
 	sleep 1
 }
+function waitforkeepalivetask()
+{
+	local LAST_TASK_ID=$1
+	executetask "status=$LAST_TASK_ID"
+	while [ $LAST_TASK_PROGRESS -ne 99 ]; do
+		showinfo "Waiting for scan to finish, progress: $LAST_TASK_PROGRESS"
+		sleep 2
+		executetask "status=$LAST_TASK_ID"
+	done 
+	showinfo "Task finished, progress: $LAST_TASK_PROGRESS"
+	sleep 1
+}
 
 #executesearchall "*geo*" "/"
 #testassert $LAST_SEARCH_COUNT 10 "SearchingAll (size 10) for ^*geo*^"
@@ -760,4 +772,59 @@ testassert $LAST_BROWSE_COUNT 2 "Checking $FOLDER_TO_RECURRENCE_SCAN/folder2/fol
 executebrowse "folder=$FOLDER_TO_RECURRENCE_SCAN/folder1/folder1a"
 testassert $LAST_BROWSE_COUNT 2 "Checking $FOLDER_TO_RECURRENCE_SCAN/folder1/folder1a folder count"	#1 folder + 1 file
 
+#test scan with newerdate
+timestamp=$(date +%s)
+timestampf1=$(date +%Y-%m-%dT%H:%M:%S)
+timestampf2=$(echo $timestampf1 | sed 's/T/%20/g')
+
+executetask "action=scan&path=$FOLDER_TO_SCAN&newerthan=$timestamp"
+waitfortask $LAST_TASK_ID
+nbscannedfiles=`curl -XGET "$HOST/_ewtask?status=$LAST_TASK_ID" 2>/dev/null | jq -r ".scannedfiles"`
+testassert $nbscannedfiles 0 "Scanning for files newer than $timestamp"
+
+executetask "action=scan&path=$FOLDER_TO_SCAN&newerthan=$timestampf1"
+waitfortask $LAST_TASK_ID
+nbscannedfiles=`curl -XGET "$HOST/_ewtask?status=$LAST_TASK_ID" 2>/dev/null | jq -r ".scannedfiles"`
+testassert $nbscannedfiles 0 "Scanning for files newer than $timestampf1"
+
+executetask "action=scan&path=$FOLDER_TO_SCAN&newerthan=$timestampf2"
+waitfortask $LAST_TASK_ID
+nbscannedfiles=`curl -XGET "$HOST/_ewtask?status=$LAST_TASK_ID" 2>/dev/null | jq -r ".scannedfiles"`
+testassert $nbscannedfiles 0 "Scanning for files newer than $timestampf2"
+
+RANDOMFILE=`ls $FOLDER_TO_SCAN | shuf -n 1`
+touch $FOLDER_TO_SCAN/$RANDOMFILE
+executetask "action=scan&path=$FOLDER_TO_SCAN&newerthan=$timestamp"
+waitfortask $LAST_TASK_ID
+nbscannedfiles=`curl -XGET "$HOST/_ewtask?status=$LAST_TASK_ID" 2>/dev/null | jq -r ".scannedfiles"`
+testassert $nbscannedfiles 1 "Scanning for files ($RANDOMFILE) newer than $timestamp"
+
+executetask "action=scan&path=$FOLDER_TO_SCAN&newerthan=$timestampf1"
+waitfortask $LAST_TASK_ID
+nbscannedfiles=`curl -XGET "$HOST/_ewtask?status=$LAST_TASK_ID" 2>/dev/null | jq -r ".scannedfiles"`
+testassert $nbscannedfiles 1 "Scanning for files ($RANDOMFILE) newer than $timestampf1"
+
+executetask "action=scan&path=$FOLDER_TO_SCAN&newerthan=$timestampf2"
+waitfortask $LAST_TASK_ID
+nbscannedfiles=`curl -XGET "$HOST/_ewtask?status=$LAST_TASK_ID" 2>/dev/null | jq -r ".scannedfiles"`
+testassert $nbscannedfiles 1 "Scanning for files ($RANDOMFILE) newer than $timestampf2"
+
+
+#test scan with keepalive
+executetask "action=scan&path=$FOLDER_TO_SCAN&newerthan=$timestamp&keepalive=true"
+waitforkeepalivetask $LAST_TASK_ID
+nbscannedfiles=`curl -XGET "$HOST/_ewtask?status=$LAST_TASK_ID" 2>/dev/null | jq -r ".scannedfiles"`
+testassert $nbscannedfiles 1 "Keepalive scanning ($RANDOMFILE) newer than $timestampf2"
+
+RANDOMFILE=`ls $FOLDER_TO_SCAN | shuf -n 1`
+touch $FOLDER_TO_SCAN/$RANDOMFILE
+sleep 36
+nbscannedfiles=`curl -XGET "$HOST/_ewtask?status=$LAST_TASK_ID" 2>/dev/null | jq -r ".scannedfiles"`
+testassert $nbscannedfiles 2 "Keepalive scanning ($RANDOMFILE) newer than $timestampf2"
+
+RANDOMFILE=`ls $FOLDER_TO_SCAN | shuf -n 1`
+touch $FOLDER_TO_SCAN/$RANDOMFILE
+sleep 36
+nbscannedfiles=`curl -XGET "$HOST/_ewtask?status=$LAST_TASK_ID" 2>/dev/null | jq -r ".scannedfiles"`
+testassert $nbscannedfiles 3 "Keepalive scanning ($RANDOMFILE) newer than $timestampf2"
 

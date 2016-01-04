@@ -22,6 +22,7 @@ package org.elasticwarehouse.tasks;
 import static org.elasticsearch.index.query.QueryBuilders.termQuery;
 
 import java.io.IOException;
+import java.util.Date;
 import java.util.LinkedList;
 import java.util.Map;
 
@@ -151,11 +152,12 @@ public class ElasticWarehouseTasksManager {
 		LinkedList<String> tasks = getTasks(false, conf_.getNodeName() /* NetworkTools.getHostName()*/, 1000, 0, false, false);
 		for(String taskId : tasks)
 		{
-			ElasticWarehouseTask task = getTask(taskId);
+			ElasticWarehouseTask task = getTask(taskId, false /*to avoid recurrence call*/);
 			task.cancelled_ = true;
 			task.setFinished();
 			if( task.indexTask() == null )
 				return false;
+			LOGGER.info("  Cancelled task:"+task.taskId_);
 		}
 		return true;
 	}
@@ -170,7 +172,7 @@ public class ElasticWarehouseTasksManager {
 		{
 			if( !isTaskStillActive(tskid) )
 			{
-				ElasticWarehouseTask tsk = getTask(tskid);
+				ElasticWarehouseTask tsk = getTask(tskid, false /*to avoid recurrence call*/);
 				if( tsk == null )
 					throw new IOException("Cannot close ghost task "+tskid+". Please try again");
 				tsk.setFinished();
@@ -183,11 +185,11 @@ public class ElasticWarehouseTasksManager {
 		if( cnt >= maxTasks_)
 			throw new IOException("Max tasks limit ("+maxTasks_+") has been reached.");
 	}
-	public synchronized ElasticWarehouseTask launchScan(String path, String targetfolder /*nullable*/, boolean brecurrence) throws IOException
+	public synchronized ElasticWarehouseTask launchScan(String path, String targetfolder /*nullable*/, boolean brecurrence, boolean keepalive, Date newerthan) throws IOException
 	{	
 		checkCurrentlyRunningTasks();
 		
-		ElasticWarehouseTaskScan task = new ElasticWarehouseTaskScan(acccessor_, conf_, path, targetfolder, brecurrence); 
+		ElasticWarehouseTaskScan task = new ElasticWarehouseTaskScan(acccessor_, conf_, path, targetfolder, brecurrence, keepalive, newerthan); 
 		String taskId = task.indexTask();
 		runningTasks_.add(task);
 		task.start();
@@ -217,9 +219,9 @@ public class ElasticWarehouseTasksManager {
 		return false;
 	}
 
-	public ElasticWarehouseTask getTask(String taskId)
+	public ElasticWarehouseTask getTask(String taskId, boolean processNotfinished)
 	{
-		if( !notFinishedTasksProcessed_ )
+		if( !notFinishedTasksProcessed_ && processNotfinished == true)
 			processNotFinishedTasks();
 		
 		GetResponse response = acccessor_.getClient().prepareGet(conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_TASKS_NAME) /*ElasticWarehouseConf.defaultTasksIndexName_*/, 

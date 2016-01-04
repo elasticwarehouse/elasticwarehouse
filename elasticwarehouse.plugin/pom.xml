@@ -21,7 +21,7 @@
     </licenses>
 	
     <properties>
-		<elasticwarehouse.version>1.2.2</elasticwarehouse.version>
+		<elasticwarehouse.version>1.2.4</elasticwarehouse.version>
 		
 		<timestamp>${maven.build.timestamp}</timestamp>
 		<maven.build.timestamp.format>yyyy-MM-dd'T'HH:mm:ssZ</maven.build.timestamp.format>

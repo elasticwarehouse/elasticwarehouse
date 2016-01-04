@@ -44,6 +44,8 @@ public class ParseTools {
 	
 	public static Date isDate(String target)
 	{
+		if( target == null )
+			return null;
 		java.util.Date result = null;
         //int pos =0;
         for(DateFormat df : dateformats)

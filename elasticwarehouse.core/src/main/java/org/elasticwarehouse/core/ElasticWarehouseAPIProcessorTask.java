@@ -23,10 +23,16 @@ import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.Date;
 import java.util.LinkedList;
+import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 
+import org.apache.http.NameValuePair;
+import org.apache.http.client.utils.URLEncodedUtils;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.rest.RestRequest;
@@ -53,6 +59,10 @@ public class ElasticWarehouseAPIProcessorTask
 		public String targetfolder = "";
 		public boolean recurrence = false;
 		
+		public boolean keepalive = false;
+		public Date newerthan = null;
+		
+		
 		//for rename
 		public String targetname = "";
 		
@@ -77,6 +87,16 @@ public class ElasticWarehouseAPIProcessorTask
 			targetfolder = orgrequest.param("targetfolder",targetfolder);
 			recurrence = orgrequest.paramAsBoolean("recurrence", recurrence);
 			
+			keepalive = orgrequest.paramAsBoolean("keepalive", keepalive);
+			newerthan = ParseTools.isDate(orgrequest.param("newerthan") );
+			if( newerthan == null )
+			{
+				Long timestamp = Long.parseLong( orgrequest.param("newerthan") );
+				if( timestamp != null )
+					newerthan = new Date(timestamp*1000);
+			}
+			
+			
 			targetname = orgrequest.param("targetname",targetname);
 			
 			folder = orgrequest.param("folder", folder);
@@ -87,6 +107,53 @@ public class ElasticWarehouseAPIProcessorTask
 			
 			showrequest = orgrequest.paramAsBoolean("showrequest", showrequest);
 			allhosts = orgrequest.paramAsBoolean("allhosts", allhosts);
+		}
+
+		public void readFromURL(String url) throws URISyntaxException {
+			List<NameValuePair> params = URLEncodedUtils.parse(new URI(url), "UTF-8");
+			for(NameValuePair pair: params)
+			{
+				if( pair.getName().equals("action") )
+					action = pair.getValue();
+				else if( pair.getName().equals("status") )
+					status = pair.getValue();
+				else if( pair.getName().equals("list") )
+					list = pair.getValue();
+				else if( pair.getName().equals("cancel") )
+					cancel = pair.getValue();
+				else if( pair.getName().equals("path") )
+					path = pair.getValue();
+				else if( pair.getName().equals("targetfolder") )
+					targetfolder = pair.getValue();
+				else if( pair.getName().equals("recurrence") )
+					recurrence = Boolean.parseBoolean(pair.getValue());
+				else if( pair.getName().equals("keepalive") )
+					keepalive = Boolean.parseBoolean(pair.getValue());
+				else if( pair.getName().equals("newerthan") ) {
+					newerthan = ParseTools.isDate(pair.getValue() );
+					if( newerthan == null )
+					{
+						Long timestamp = Long.parseLong( pair.getValue() );
+						if( timestamp != null )
+							newerthan = new Date(timestamp*1000);
+					}
+				}
+				else if( pair.getName().equals("targetname") )
+					targetname = pair.getValue();
+				else if( pair.getName().equals("folder") )
+					folder = pair.getValue();
+				else if( pair.getName().equals("id") )
+					id = pair.getValue();
+				else if( pair.getName().equals("size") )
+					size = Integer.parseInt( pair.getValue() );
+				else if( pair.getName().equals("from") )
+					from = Integer.parseInt( pair.getValue() );
+				else if( pair.getName().equals("showrequest") )
+					showrequest = Boolean.parseBoolean( pair.getValue() );
+				else if( pair.getName().equals("allhosts") )
+					allhosts = Boolean.parseBoolean( pair.getValue() );
+			}
+			
 		}
 	};
 	
@@ -110,6 +177,9 @@ public class ElasticWarehouseAPIProcessorTask
 		params.targetname = request.getParameter("targetname");
 		
 		String srecurrence = request.getParameter("recurrence");
+		String skeepalive = request.getParameter("keepalive");
+		String snewerthan = request.getParameter("newerthan");
+		
 		String sshowrequest = request.getParameter("showrequest");
 		String sallhosts = request.getParameter("allhosts");
 		
@@ -124,6 +194,20 @@ public class ElasticWarehouseAPIProcessorTask
 		
 		if( srecurrence != null )
 			params.recurrence = Boolean.parseBoolean(srecurrence);
+		if( skeepalive != null )
+			params.keepalive = Boolean.parseBoolean(skeepalive);
+		params.newerthan = ParseTools.isDate(snewerthan);
+		if( params.newerthan == null )
+		{
+			try{
+			Long timestamp = Long.parseLong(snewerthan);
+			if( timestamp != null )
+				params.newerthan = new Date(timestamp*1000);
+			}catch(java.lang.NumberFormatException e)
+			{
+				
+			}
+		}
 		
 		params.folder = request.getParameter("folder");
 		
@@ -160,7 +244,7 @@ public class ElasticWarehouseAPIProcessorTask
 				{
 					os.write(responser.errorMessage("path is needed for scan action.", ElasticWarehouseConf.URL_GUIDE_TASK));
 				}else{
-					ElasticWarehouseTask taskUUID = tasksManager_.launchScan(params.path, params.targetfolder, params.recurrence);
+					ElasticWarehouseTask taskUUID = tasksManager_.launchScan(params.path, params.targetfolder, params.recurrence, params.keepalive, params.newerthan);
 					os.write(responser.taskAcceptedMessage("Scanning "+params.path, 0, taskUUID));
 				}
 			}
@@ -252,7 +336,7 @@ public class ElasticWarehouseAPIProcessorTask
 		}
 		else if( params.status != null )
 		{
-			ElasticWarehouseTask task = tasksManager_.getTask(params.status);
+			ElasticWarehouseTask task = tasksManager_.getTask(params.status, true);
 			if( task != null)
 			{
 				os.write(task.getJsonSourceBuilder().string().getBytes());
@@ -264,7 +348,7 @@ public class ElasticWarehouseAPIProcessorTask
 		}
 		else if( params.cancel != null )
 		{
-			ElasticWarehouseTask task = tasksManager_.getTask(params.cancel);
+			ElasticWarehouseTask task = tasksManager_.getTask(params.cancel, true);
 			if( task != null)
 			{
 				if( task.finished() )
@@ -299,7 +383,7 @@ public class ElasticWarehouseAPIProcessorTask
 			XContentBuilder builder = jsonBuilder().startArray();
 			for(String taskid : tasks)
 			{
-				ElasticWarehouseTask task = tasksManager_.getTask(taskid);
+				ElasticWarehouseTask task = tasksManager_.getTask(taskid, true);
 				if( task == null )
 				{
 					throw new IOException("Cannot fetch taskId: " + taskid);
