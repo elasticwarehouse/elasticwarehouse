@@ -57,7 +57,7 @@
     </licenses>
 	
     <properties>
-		<elasticwarehouse.version>1.2.2</elasticwarehouse.version>
+		<elasticwarehouse.version>1.2.4</elasticwarehouse.version>
 		<elasticsearch.version>2.1.0</elasticsearch.version>
 		<elasticsearch.plugin.classname>org.elasticwarehouse.plugin.ewapi.ElasticWarehousePlugin</elasticsearch.plugin.classname>
 		<timestamp>${maven.build.timestamp}</timestamp>

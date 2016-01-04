@@ -1,8 +1,8 @@
-#ElasticWarehouse
+h1. ElasticWarehouse
 
-##A Distributed RESTful File Storage & Search Engine
+h2. A Distributed RESTful File Storage & Search Engine
 
-###[http://elasticwarehouse.org](http://elasticwarehouse.org)
+h3. "http://www.elasticwarehouse.org":http://www.elasticwarehouse.org
 
 ElasticWarehouse is a file data storage build on the top of ElasticSearch (distributed RESTful 
 search engine built for the cloud) and it has all its features:
@@ -31,7 +31,7 @@ search engine built for the cloud) and it has all its features:
 ** Single document level operations are atomic, consistent, isolated and durable.
 * Open Source under Apache 2 License.
 
-##Getting Started
+h2. Getting Started
 
 Goal of ElasticWarehouse is to organize your files, make them searchable and take care about fault 
 tolerance. Thanks to ElasticWarehouse you can store terabytes of data in the cloud. This short 
@@ -41,14 +41,14 @@ to the cloud and how to access them using REST API.
 ElasticWarehouse is an open-source project and it has nothing common with Elastic.co, except fact 
 ElasticWarehouse has been build on the top of ElasticSearch.
 
-###Installation
+h3. Installation
 
 * "Download":http://www.elasticwarehouse.org/download and unzip the ElasticWarehouse official distribution.
 * Run @bin/elasticsearch@ on nix systems, or @bin\elasticsearch.bat@ on windows.
 * Run @curl -X GET http://localhost:10200/@.
 * Start more servers ...
 
-###Uploading files to teh cloud
+h3. Uploading files to teh cloud
 
 Let's try to upload your first file to the cloud (the @folder@ path will be created automatically):
 <pre>
@@ -157,7 +157,7 @@ curl -XGET "http://localhost:10200/_ewinfo?id=aYLro1V_TzO0tfLNmbp4gA"
 	},
 	{
 		"metakey": "GPS Longitude",
-		"metavaluetext": "-54.0Â° 7.0' 24.239999980010225\""
+		"metavaluetext": "-54.0° 7.0' 24.239999980010225\""
 	},
 	{
 		"metakey": "GPSLongitudeRef",
@@ -301,7 +301,7 @@ curl -XGET "http://localhost:10200/_ewinfo?id=aYLro1V_TzO0tfLNmbp4gA"
 	},
 	{
 		"metakey": "GPSLatitude",
-		"metavaluetext": "12.0Â°32.0'35.556000000000694\""
+		"metavaluetext": "12.0°32.0'35.556000000000694\""
 	},
 	{
 		"metakey": "Component 2",
@@ -460,7 +460,7 @@ Want to download it back from the cloud?
 curl -XGET "http://localhost:10200/_ewget?id=E0Jjq7MZTPa3boax6OSw0w" > /tmp/myimage.jpg
 </pre>
 
-###Searching
+h3. Searching
 
 Search for files search can be done by ElasticWarehouse REST API or Elasticsearch API (it's up to you),
 hovewer in this short guide we show how to use ElasticWarehouse REST API and for more advanced search 
@@ -592,7 +592,7 @@ curl -XPOST "http://localhost:10200/_ewsearch" -d '{
 
 There are more options to perform search, to read more about them visit http://elasticwarehouse.org/elasticwarehouse-rest-api/.
 
-###Distributed, Highly Available
+h3. Distributed, Highly Available
 
 ElasticWarehouse is build on the top of Elasticsearch - highly available and distributed search engine. 
 Each index is broken down into shards, and each shard can have one or more replica. By default, an index 
@@ -604,12 +604,12 @@ In order to play with Elasticsearch distributed nature, simply bring more nodes 
 The system will continue to serve requests (make sure you use the correct http port) with the latest data 
 indexed.
 
-###Where to go from here?
+h3. Where to go from here?
 
 We have just covered a very small portion of ElasticWarehouse features. For more information, please 
 refer to the "elasticwarehouse.org":http://www.elasticwarehouse.org website.
 
-###Upgrading to new ElasticWarehouse version
+h3. Upgrading to new ElasticWarehouse version
 
 In order to ensure a smooth upgrade process from earlier versions of ElasticWarehouse it is recommended to:
 - make a full backup of /data folder when lucene indices are stored
@@ -617,7 +617,7 @@ In order to ensure a smooth upgrade process from earlier versions of ElasticWare
 - perform a full cluster restart. 
 Please see the "Upgrading" section http://elasticwarehouse.org/upgrade/.
 
-#License
+h1. License
 
 <pre>
 This software is licensed under the Apache 2 license, quoted below.

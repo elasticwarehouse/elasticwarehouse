@@ -33,7 +33,6 @@ import org.elasticsearch.monitor.jvm.JvmInfo;
 import org.elasticwarehouse.core.EWLogger;
 import org.elasticwarehouse.core.ElasticWarehouseConf;
 
-//TODO uaktualnic trempalte 2x , przebudowac , unit test i deploymentscripts (dla plugin atez potrzeba wersji with deps and without)
 //TODO JVMCheck.check();
 //TODO [2015-12-16 22:45:06,515]  WARN [elasticsearch[ptapdev][[ttl_expire]]] (IndicesTTLService.java:143) - [ptapdev] failed to execute ttl purge
 //java.lang.NullPointerException
@@ -41,14 +40,6 @@ import org.elasticwarehouse.core.ElasticWarehouseConf;
 //at org.elasticsearch.indices.ttl.IndicesTTLService.access$000(IndicesTTLService.java:67)
 //at org.elasticsearch.indices.ttl.IndicesTTLService$PurgerThread.run(IndicesTTLService.java:140)
 //[2015-12-16 22:45:36,669]  INFO [monitoring] (ElasticWarehouseMonitoring.java:94) - Performance collector sta
-
-
-//backport 1.x
-//- zmiany scan (petele) tam gdzie jest uzywane MAX_limit
-//- class zmiast getclass()  w ResourceTools
-//- lapanie wyjatku z java.policy ze plugin nie moze czytac z plikow spoza swojego katalogu
-//public void recreateTemplatesAndIndices(boolean includeGrafana) {
-//dodac : createIndex(conf_.getWarehouseValue(ElasticWarehouseConf.ES_INDEX_UPLOADS_NAME) );
 
 
 //TODO future: option to backup deleted files to different location

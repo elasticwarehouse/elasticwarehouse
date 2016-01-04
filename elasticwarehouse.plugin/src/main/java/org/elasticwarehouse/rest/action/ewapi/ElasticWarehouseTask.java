@@ -56,6 +56,7 @@ public class ElasticWarehouseTask extends ElasticWarehouseRestHandler {
 		client_ = client;
 		//controller_ = controller;
         
+		
         controller.registerHandler(GET, "/_ewtask", this);
         //controller.registerHandler(GET, "/{index}/_ewsearchall", this);
         //controller.registerHandler(GET, "/{index}/{type}/_myrestpoint", this);

@@ -20,11 +20,14 @@
 package org.elasticwarehouse.core.parsers;
 
 public class FileDef {
-	public FileDef(String fname, String folder)
+	
+	public FileDef(String fname, String folder, long lastModified)
 	{
 		fname_ = fname;
 		folder_ = folder;
+		lastModified_ = lastModified;
 	}
 	public String fname_;
 	public String folder_;
+	public long lastModified_;
 }

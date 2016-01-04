@@ -145,7 +145,7 @@ public class ElasticSearchMonitor  extends PerfMon {
 		
 		//collect files........
 		LinkedList<String> ret = new LinkedList<String>();
-		LinkedList<FileDef> list = FileTools.scanFolder(folder_, new LinkedList<String>());
+		LinkedList<FileDef> list = FileTools.scanFolder(folder_, new LinkedList<String>(), null);
 		for(FileDef fd : list)
 		{
 			if(fd.fname_.startsWith(ES_FILE_PREFIX) && fd.fname_.endsWith(".rrd"))

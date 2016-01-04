@@ -88,6 +88,10 @@ public class ElasticWarehouseConf {
 	public static final String TASKSMAXNUMBER = "tasks.max.number";
 	public static final int TASKSMAXNUMBERDEFAULT = 2;
 	
+	public static final String ES_KEEP_ALIVE_SLEEP = "tasks.keepalive.sleep";	//in ms
+	
+	public static final String AUTOSTART_TASKS = "autostart.tasks";
+	
 	
 	/*
 	public static final String defaultClusterName_ = "elasticwarehouse";
@@ -118,6 +122,8 @@ public class ElasticWarehouseConf {
 	public static final String FIELD_THUMB_AVAILABLE = "filethumb_available";
 	public static final String FIELD_THUMB_THUMB = "filethumb_thumb";
 	public static final String FIELD_THUMB_THUMBDATE = "filethumb_thumbdate";
+
+	
 
 	
 	
